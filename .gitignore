@@ -1,12 +1,12 @@
 **/*.pyc
 *.log
 
+/dist
+/build
+
 # Settings files
-/local_settings.py
 /settings_local.py
-/settings_admin.py
 /settings_test.py
-/settings_local_test.py
 
 # IDE files
 .idea/
