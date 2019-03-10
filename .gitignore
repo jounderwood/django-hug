@@ -1,0 +1,45 @@
+**/*.pyc
+*.log
+
+# Settings files
+/local_settings.py
+/settings_local.py
+/settings_admin.py
+/settings_test.py
+/settings_local_test.py
+
+# IDE files
+.idea/
+.vscode
+.tmp/
+
+# pytest
+.cache
+.pytest_cache
+
+# coverage
+.coverage
+coverage/
+.reports
+
+# docs
+docs/_build
+
+# virtualenv activation
+/.virtualenv
+/.venv-docker
+/.venv
+/activate
+
+# front-end
+node_modules
+/static/
+/media/
+webpack.local.js
+
+# docker environment
+.env
+
+.DS_Store
+.DS_Store?
+.Trashes
