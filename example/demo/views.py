@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-import djhug
+import django_hug
 
-routes = djhug.Routes()
+routes = django_hug.Routes()
 
 
-@routes.get('^$', use_re_path=True)
+@routes.get('^$', re=True)
 def index2(request, year: float, name: str, rr: int = 2):
     loc = locals()
     del loc['request']
@@ -26,7 +26,7 @@ def index3(request, year):
     return loc
 
 
-@djhug.route()
+@django_hug.route()
 def index4(request):
     loc = locals()
     del loc['request']

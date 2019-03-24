@@ -1,19 +1,25 @@
-import os
 import sys
 
 import django
-from django.core import management
+import pytest
+from django.test import override_settings
 
+import django_hug
+
+urlpatterns = []  # noqa
 
 
 def pytest_addoption(parser):
-    parser.addoption('--no-pkgroot', action='store_true', default=False,
-                     help='Remove package root directory from sys.path, ensuring that '
-                          'rest_framework is imported from the installed site-packages. '
-                          'Used for testing the distribution.')
-    parser.addoption('--staticfiles', action='store_true', default=False,
-                     help='Run tests with static files collection, using manifest '
-                          'staticfiles storage. Used for testing the distribution.')
+    parser.addoption(
+        "--no-pkgroot",
+        action="store_true",
+        default=False,
+    )
+    parser.addoption(
+        "--staticfiles",
+        action="store_true",
+        default=False,
+    )
 
 
 def pytest_configure(config):
@@ -21,44 +27,52 @@ def pytest_configure(config):
 
     settings.configure(
         DEBUG_PROPAGATE_EXCEPTIONS=True,
-        DATABASES={
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': ':memory:'
-            }
-        },
+        DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}},
         SITE_ID=1,
-        SECRET_KEY='not very secret in tests',
+        SECRET_KEY="not very secret in tests",
         USE_I18N=True,
         USE_L10N=True,
-        STATIC_URL='/static/',
-        ROOT_URLCONF='tests.urls',
+        STATIC_URL="/static/",
+        ROOT_URLCONF=__name__,
         TEMPLATES=[
             {
-                'BACKEND': 'django.template.backends.django.DjangoTemplates',
-                'APP_DIRS': True,
-                'OPTIONS': {
-                    "debug": True,  # We want template errors to raise
-                }
-            },
+                "BACKEND": "django.template.backends.django.DjangoTemplates",
+                "APP_DIRS": True,
+                "OPTIONS": {"debug": True},  # We want template errors to raise
+            }
         ],
         MIDDLEWARE=(
-            'django.middleware.common.CommonMiddleware',
-            'django.contrib.sessions.middleware.SessionMiddleware',
-            'django.contrib.auth.middleware.AuthenticationMiddleware',
-            'django.contrib.messages.middleware.MessageMiddleware',
+            "django.middleware.common.CommonMiddleware",
+            "django.contrib.sessions.middleware.SessionMiddleware",
+            "django.contrib.auth.middleware.AuthenticationMiddleware",
+            "django.contrib.messages.middleware.MessageMiddleware",
         ),
         INSTALLED_APPS=(
-            'django.contrib.admin',
-            'django.contrib.auth',
-            'django.contrib.contenttypes',
-            'django.contrib.sessions',
-            'django.contrib.sites',
-            'django.contrib.staticfiles',
+            "django.contrib.admin",
+            "django.contrib.auth",
+            "django.contrib.contenttypes",
+            "django.contrib.sessions",
+            "django.contrib.sites",
+            "django.contrib.staticfiles",
         ),
-        PASSWORD_HASHERS=(
-            'django.contrib.auth.hashers.MD5PasswordHasher',
-        ),
+        PASSWORD_HASHERS=("django.contrib.auth.hashers.MD5PasswordHasher",),
     )
 
     django.setup()
+
+
+@pytest.fixture
+def with_urlpatterns(monkeypatch):
+    with override_settings(ROOT_URLCONF=__name__):
+        mod = sys.modules[__name__]
+
+        def wrap(urlpatterns):
+            mod.urlpatterns = []
+            monkeypatch.setattr(mod, "urlpatterns", list(urlpatterns))
+
+        yield wrap
+
+
+@pytest.fixture
+def routes():
+    return django_hug.Routes()

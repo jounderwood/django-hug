@@ -12,7 +12,7 @@ class RequestError(DjhugError):
 
 class ValidationError(ValueError, RequestError):
     def __init__(self, data: Union[str, dict, Exception]):
-        msg = ''
+        msg = ""
         if isinstance(data, dict):
             try:
                 self.error_data = data

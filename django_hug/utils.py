@@ -1,12 +1,14 @@
-from collections import namedtuple
-
-import json
-from marshmallow import fields, Schema
-from typing import Callable, NamedTuple, List
 import inspect
+import json
+from typing import Callable, NamedTuple, List
 
-from djhug import ValidationError
-from djhug.constants import empty
+from django.http import RawPostDataException
+from marshmallow import ValidationError as MarshmallowValidationError
+from marshmallow import fields, Schema
+
+from django_hug import ValidationError
+from django_hug.constants import empty
+from django_hug.directives import get_directive
 
 
 class Arg(NamedTuple):
@@ -32,26 +34,34 @@ def get_function_spec(fn: Callable) -> Spec:
             Arg(name=name, arg_type=param.annotation, default=param.default)
             for name, param in signature.parameters.items()
         ],
-        return_type=signature.return_annotation
+        return_type=signature.return_annotation,
     )
 
 
 def get_value(name, request, kwargs=None):
     val = empty
 
-    if kwargs:
+    try:
+        val = get_directive(name)(request)
+    except KeyError:
+        pass
+
+    if val is empty and kwargs:
         val = kwargs.get(name, empty)
 
     if val is empty:
         val = request.GET.get(name, empty)
-    if val is empty:
-        val = request.POST.get(name, empty)
-    if val is empty and request.body:
-        try:
-            body = json.loads(request.body.decode('utf-8'))
-            val = body.get(name, empty)
-        except ValueError:
-            pass
+
+    if request.method.upper() in ["POST", "PUT", "PATCH"]:
+        if val is empty:
+            try:
+                body = json.loads(request.body.decode("utf-8"))
+                val = body.get(name, empty)
+            except (ValueError, RawPostDataException):
+                pass
+
+        if val is empty:
+            val = request.POST.get(name, empty)
 
     return val
 
@@ -60,10 +70,13 @@ def load_value(value, arg_type):
     if not arg_type or arg_type is empty:
         return value
 
-    load_with_marshmallow = _get_method(arg_type, Schema, 'load') or _get_method(arg_type, fields.Field, 'deserialize')
+    load_with_marshmallow = _get_method(arg_type, Schema, "load") or _get_method(arg_type, fields.Field, "deserialize")
 
     if load_with_marshmallow:
-        value = load_with_marshmallow(value)
+        try:
+            value = load_with_marshmallow(value)
+        except MarshmallowValidationError as e:
+            raise ValidationError(e.data) from e
     elif callable(arg_type):
         try:
             value = arg_type(value)

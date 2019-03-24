@@ -1,23 +1,16 @@
-import inspect
-import json
-from functools import partial
-from inspect import getfullargspec, formatannotation, formatargspec
 import functools
+import inspect
+from typing import Callable, Optional, List
 
-from django.http import HttpResponse
 from django.http import HttpResponseBadRequest
 from django.http import HttpResponseNotAllowed
 from django.http import JsonResponse
 from django.urls import path as url_path, re_path as url_re_path
-
-from inspect import formatargspec, getfullargspec
-
 from django.utils.functional import cached_property
-from typing import Callable, Optional
 
-from djhug.constants import HTTP_METHODS, MEDIA_JSON
-from djhug.exceptions import HttpNotAllowed, ValidationError
-from djhug.utils import Spec, get_function_spec, get_value, load_value
+from django_hug.constants import HTTP_METHODS, MEDIA_JSON
+from django_hug.exceptions import HttpNotAllowed, ValidationError
+from django_hug.utils import Spec, get_function_spec, get_value, load_value
 
 empty = inspect.Signature.empty
 
@@ -67,7 +60,7 @@ class route:
             val = get_value(arg.name, request, kwargs)
 
             if val is empty and arg.default is empty:
-                errors[name] = 'Parameter is required'
+                errors[name] = "Parameter is required"
                 continue
 
             if val is not empty:
@@ -83,7 +76,7 @@ class route:
 
     def process_response(self, response):
         if isinstance(response, (dict, list)):
-            response = HttpResponse(content=json.dumps(response), content_type=MEDIA_JSON)
+            response = JsonResponse(response, safe=False)
         return response
 
     def error_handler(self, e, request):
@@ -98,10 +91,10 @@ class route:
 
 
 class Routes:
-    __slots__ = ('_routes', )
+    __slots__ = ("_routes",)
 
-    def __init__(self, ):
-        self._routes = []
+    def __init__(self,):
+        self._routes: List[_path_route] = []
 
     def route(self, *args, **kwargs):
         _route = _path_route(*args, **kwargs)
@@ -109,19 +102,35 @@ class Routes:
         return _route
 
     def urls(self):
-        for r in self._routes:
-            yield r.django_url_path
+        return [r.urlpattern for r in self._routes]
 
+    def get(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
+        return self.route(path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["GET"])
 
-for method in HTTP_METHODS:
-    setattr(Routes, method.lower(), functools.partialmethod(Routes.route, accept=[method]))
+    def post(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
+        return self.route(
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["POST"]
+        )
+
+    def put(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
+        return self.route(path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["PUT"])
+
+    def patch(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
+        return self.route(
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["PATCH"]
+        )
+
+    def delete(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
+        return self.route(
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["DELETE"]
+        )
 
 
 class _path_route(route):
-    __slots__ = ('path_fn', )
+    __slots__ = ("path_handler",)
 
-    def __init__(self, path=None, kwargs=None, name=None, use_re_path=False, **kw):
-        self.path_fn = url_re_path if use_re_path else url_path
+    def __init__(self, path=None, kwargs=None, name=None, re=False, **kw):
+        self.path_handler = url_re_path if re else url_path
 
         self.path = path
         self.kwargs = kwargs or {}
@@ -130,5 +139,5 @@ class _path_route(route):
         super().__init__(**kw)
 
     @property
-    def django_url_path(self):
-        return self.path_fn(route=self.path, view=self.callable, kwargs=self.kwargs, name=self.name)
+    def urlpattern(self):
+        return self.path_handler(route=self.path, view=self.callable, kwargs=self.kwargs, name=self.name)
