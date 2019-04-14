@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from django.http import HttpResponse
 from marshmallow import Schema, fields
 
@@ -15,10 +16,10 @@ def test_simple_get_ok(client, with_urlpatterns, routes: django_hug.Routes):
 
     with_urlpatterns(list(routes.urls()))
 
-    resp: HttpResponse = client.get("/911/alarm/?q1=23.2000&wat=meh")
+    resp: HttpResponse = client.get("/123/alarm/?q1=23.2000&wat=meh")
 
     assert resp.status_code == 200, resp.content
-    assert json.loads(resp.content) == {"year": 911, "name": "alarm", "q1": 23.2, "q2": "firefire"}
+    assert json.loads(resp.content) == {"year": 123, "name": "alarm", "q1": 23.2, "q2": "firefire"}
 
 
 def test_simple_get_regex_ok(client, with_urlpatterns, routes: django_hug.Routes):
@@ -30,7 +31,7 @@ def test_simple_get_regex_ok(client, with_urlpatterns, routes: django_hug.Routes
 
     with_urlpatterns(list(routes.urls()))
 
-    resp: HttpResponse = client.get("/911/")
+    resp: HttpResponse = client.get("/000/")
 
     assert resp.status_code == 404, resp.content
 
@@ -96,7 +97,7 @@ def test_custom_headers(client, with_urlpatterns, routes: django_hug.Routes):
 
 def test_multiple_routes(client, with_urlpatterns, routes: django_hug.Routes):
     @routes.post("post/")
-    # @routes.get("get_patch/<str:name>/")
+    @routes.get("get_patch/<str:name>/")
     @routes.patch("get_patch/<str:name>/")
     def strange_view(request, name: str = None, number: int = None):
         loc = locals()
@@ -116,3 +117,48 @@ def test_multiple_routes(client, with_urlpatterns, routes: django_hug.Routes):
     resp: HttpResponse = client.patch("/get_patch/wow/")
     assert resp.status_code == 200, resp.content
     assert json.loads(resp.content) == {"name": "wow", "number": None}
+
+
+def test_simple_validation_errors_ok(client, with_urlpatterns, routes: django_hug.Routes):
+    @routes.get("test/")
+    def view(request, year: int, month: int = 1, day: int = None):
+        loc = locals()
+        del loc["request"]
+        return loc
+
+    with_urlpatterns(list(routes.urls()))
+
+    resp: HttpResponse = client.get("/test/?month=unknown&day=1")
+
+    assert resp.status_code == 400, resp.content
+    assert json.loads(resp.content) == {
+        "errors": {
+            "year": "Missing data for required field",
+            "month": "invalid literal for int() with base 10: 'unknown'",
+        }
+    }
+
+
+def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: django_hug.Routes):
+    class RespSchema(Schema):
+        id = fields.Int(required=True)
+        quantity = fields.Int(required=True)
+
+    @routes.post("test/")
+    def view(request, body: RespSchema(), q1: int, q2: int, q3: fields.Int()):
+        loc = locals()
+        del loc["request"]
+        return loc
+
+    with_urlpatterns(list(routes.urls()))
+
+    resp: HttpResponse = client.post("/test/?q2=1&q3=aaa", data={"id": 123})
+
+    assert resp.status_code == 400, resp.content
+    assert json.loads(resp.content) == {
+        "errors": {
+            "quantity": "Missing data for required field.",
+            "q1": "Missing data for required field.",
+            "q3": "Not a valid integer.",
+        }
+    }

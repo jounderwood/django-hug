@@ -6,7 +6,7 @@ from django.http import RawPostDataException
 from marshmallow import ValidationError as MarshmallowValidationError
 from marshmallow import fields, Schema
 
-from django_hug import ValidationError
+from django_hug.exceptions import ValidationError
 from django_hug.constants import EMPTY, HTTP, ContentTypes
 from django_hug.directives import get_directive
 
@@ -75,12 +75,12 @@ def load_value(value, arg_type):
         try:
             value = marshmallow_load(value)
         except MarshmallowValidationError as e:
-            raise ValidationError(e.data) from e
+            raise ValidationError.from_marshmallow_error(e) from e
     elif callable(arg_type):
         try:
             value = arg_type(value)
         except (TypeError, ValueError) as e:
-            raise ValidationError(e) from e
+            raise ValidationError(str(e)) from e
 
     return value
 

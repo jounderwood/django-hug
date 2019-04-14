@@ -37,7 +37,7 @@ class route:
                 kwargs = self.process_request(request, **kwargs)
                 response = self.fn(request, **kwargs)
                 response = self.process_response(request, response)
-            except Exception as e:
+            except Error as e:
                 response = self.error_handler(e, request)
 
             return response
@@ -57,17 +57,17 @@ class route:
             val = get_value(arg.name, request, kwargs)
 
             if val is EMPTY and arg.default is EMPTY:
-                errors[name] = "Parameter is required"
+                errors[name] = "Missing data for required field"
                 continue
 
             if val is not EMPTY:
                 try:
                     kwargs[name] = load_value(val, arg.arg_type)
                 except ValidationError as e:
-                    errors[arg.name] = e
+                    errors[arg.name] = e.message or e.fields_errors
 
         if errors:
-            raise ValidationError(errors)
+            raise ValidationError(**errors)
 
         return kwargs
 
@@ -82,11 +82,12 @@ class route:
 
         return response
 
-    def error_handler(self, e: Exception, request):
+    def error_handler(self, e: Error, request):
+        # TODO: add custom exceptions formatting
         if isinstance(e, HttpNotAllowed):
             response = HttpResponseNotAllowed(self.accept)
         elif isinstance(e, ValidationError):
-            response = HttpResponseBadRequest(content=str(e), content_type=ContentTypes.JSON)
+            response = JsonResponse({"errors": e.fields_errors}, status=400)
         else:
             raise e
 

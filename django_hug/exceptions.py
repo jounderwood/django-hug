@@ -1,5 +1,6 @@
-import json
-from typing import Union
+from typing import Dict
+
+from marshmallow import ValidationError as MarshmallowValidationError
 
 
 class Error(Exception):
@@ -11,18 +12,17 @@ class RequestError(Error):
 
 
 class ValidationError(ValueError, RequestError):
-    def __init__(self, data: Union[str, dict, Exception]):
-        msg = ""
-        if isinstance(data, dict):
-            try:
-                self.error_data = data
-                msg = json.dumps(data)
-            except (ValueError, TypeError):
-                self.error_data = None
-        elif isinstance(data, Exception):
-            msg = str(data)
+    def __init__(self, message=None, **fields_errors: Dict[str, str]):
+        if message:
+            fields_errors[""] = message
 
-        super().__init__(self, msg)
+        self.message = message
+        self.fields_errors = fields_errors
+        super().__init__(self, str(fields_errors))
+
+    @classmethod
+    def from_marshmallow_error(cls, e: MarshmallowValidationError):
+        return cls(**e.normalized_messages())
 
 
 class HttpResponseError(Error):
