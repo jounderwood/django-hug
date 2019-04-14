@@ -61,7 +61,7 @@ def test_marshmallow_whole_body_post_ok(client, with_urlpatterns, routes: django
         quantity = fields.Int(required=True)
 
     @routes.post("<str:name>/")
-    def fn(request, name: str, body: RespSchema):
+    def fn(request, name: str, body: RespSchema()):
         loc = locals()
         del loc["request"]
         return loc

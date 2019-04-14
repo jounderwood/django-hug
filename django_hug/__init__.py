@@ -8,21 +8,19 @@ from django.http import JsonResponse
 from django.urls import path as url_path, re_path as url_re_path
 from django.utils.functional import cached_property
 
-from django_hug.constants import HTTP_METHODS, MEDIA_JSON
+from django_hug.constants import HTTP, ContentTypes, EMPTY
 from django_hug.exceptions import HttpNotAllowed, ValidationError
-from django_hug.utils import Spec, get_function_spec, get_value, load_value
-
-empty = inspect.Signature.empty
+from django_hug.arguments import Spec, get_function_spec, get_value, load_value
 
 
 class route:
     fn: Callable
     spec: Spec
 
-    accept = HTTP_METHODS
+    accept = ContentTypes.JSON
     response_headers: Optional[dict] = None
 
-    def __init__(self, response_headers=None, accept=HTTP_METHODS):
+    def __init__(self, response_headers=None, accept=HTTP.ALL):
         self.accept = accept
         self.response_headers = response_headers
 
@@ -59,11 +57,11 @@ class route:
             name = arg.name
             val = get_value(arg.name, request, kwargs)
 
-            if val is empty and arg.default is empty:
+            if val is EMPTY and arg.default is EMPTY:
                 errors[name] = "Parameter is required"
                 continue
 
-            if val is not empty:
+            if val is not EMPTY:
                 try:
                     kwargs[name] = load_value(val, arg.arg_type)
                 except ValidationError as e:
@@ -83,7 +81,7 @@ class route:
         if isinstance(e, HttpNotAllowed):
             response = HttpResponseNotAllowed(self.accept)
         elif isinstance(e, ValidationError):
-            response = HttpResponseBadRequest(content=str(e), content_type=MEDIA_JSON)
+            response = HttpResponseBadRequest(content=str(e), content_type=ContentTypes.JSON)
         else:
             raise e
 
@@ -93,7 +91,7 @@ class route:
 class Routes:
     __slots__ = ("_routes",)
 
-    def __init__(self,):
+    def __init__(self):
         self._routes: List[_path_route] = []
 
     def route(self, *args, **kwargs):
@@ -105,24 +103,28 @@ class Routes:
         return [r.urlpattern for r in self._routes]
 
     def get(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
-        return self.route(path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["GET"])
+        return self.route(
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=[HTTP.GET]
+        )
 
     def post(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
         return self.route(
-            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["POST"]
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=[HTTP.POST]
         )
 
     def put(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
-        return self.route(path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["PUT"])
+        return self.route(
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=[HTTP.PUT]
+        )
 
     def patch(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
         return self.route(
-            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["PATCH"]
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=[HTTP.PATCH]
         )
 
     def delete(self, path=None, kwargs=None, name=None, re=False, response_headers=None):
         return self.route(
-            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=["DELETE"]
+            path=path, kwargs=kwargs, name=name, re=re, response_headers=response_headers, accept=[HTTP.DELETE]
         )
 
 

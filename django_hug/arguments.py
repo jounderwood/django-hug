@@ -1,13 +1,13 @@
 import inspect
 import json
-from typing import Callable, NamedTuple, List
+from typing import Callable, List, NamedTuple
 
 from django.http import RawPostDataException
 from marshmallow import ValidationError as MarshmallowValidationError
 from marshmallow import fields, Schema
 
 from django_hug import ValidationError
-from django_hug.constants import empty
+from django_hug.constants import EMPTY, HTTP, ContentTypes
 from django_hug.directives import get_directive
 
 
@@ -39,35 +39,37 @@ def get_function_spec(fn: Callable) -> Spec:
 
 
 def get_value(name, request, kwargs=None):
-    val = empty
+    val = EMPTY
 
-    try:
-        val = get_directive(name)(request)
-    except KeyError:
-        pass
+    directive = get_directive(name)
+    if directive:
+        val = directive(request)
 
-    if val is empty and kwargs:
-        val = kwargs.get(name, empty)
+    if val is EMPTY and kwargs:
+        val = kwargs.get(name, EMPTY)
 
-    if val is empty:
-        val = request.GET.get(name, empty)
+    if val is EMPTY:
+        val = request.GET.get(name, EMPTY)
 
-    if request.method.upper() in ["POST", "PUT", "PATCH"]:
-        if val is empty:
+    if (
+        val is EMPTY
+        and request.method.upper() in [HTTP.POST, HTTP.PUT, HTTP.PATCH]
+    ):
+        if ContentTypes.JSON in request.content_type:
             try:
-                body = json.loads(request.body.decode("utf-8"))
-                val = body.get(name, empty)
+                # TODO: escape performing json.loads on every argument
+                body = json.loads(request.body.decode(request.encoding or "utf-8"))
+                val = body.get(name, EMPTY)
             except (ValueError, RawPostDataException):
                 pass
-
-        if val is empty:
-            val = request.POST.get(name, empty)
+        else:
+            val = request.POST.get(name, EMPTY)
 
     return val
 
 
 def load_value(value, arg_type):
-    if not arg_type or arg_type is empty:
+    if not arg_type or arg_type is EMPTY:
         return value
 
     load_with_marshmallow = _get_method(arg_type, Schema, "load") or _get_method(arg_type, fields.Field, "deserialize")
@@ -86,12 +88,10 @@ def load_value(value, arg_type):
     return value
 
 
-def _get_method(arg_type, kls, method):
+def _get_method(arg_type, kls, method_name):
     if isinstance(arg_type, kls):
-        meth = getattr(arg_type, method)
-    elif inspect.isclass(arg_type) and issubclass(arg_type, Schema):
-        meth = getattr(arg_type(), method)
+        method = getattr(arg_type, method_name)
     else:
-        meth = None
+        method = None
 
-    return meth
+    return method
