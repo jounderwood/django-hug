@@ -51,10 +51,7 @@ def get_value(name, request, kwargs=None):
     if val is EMPTY:
         val = request.GET.get(name, EMPTY)
 
-    if (
-        val is EMPTY
-        and request.method.upper() in [HTTP.POST, HTTP.PUT, HTTP.PATCH]
-    ):
+    if val is EMPTY and request.method.upper() in [HTTP.POST, HTTP.PUT, HTTP.PATCH]:
         if ContentTypes.JSON in request.content_type:
             try:
                 # TODO: escape performing json.loads on every argument
@@ -72,11 +69,11 @@ def load_value(value, arg_type):
     if not arg_type or arg_type is EMPTY:
         return value
 
-    load_with_marshmallow = _get_method(arg_type, Schema, "load") or _get_method(arg_type, fields.Field, "deserialize")
+    marshmallow_load = _get_method(arg_type, Schema, "load") or _get_method(arg_type, fields.Field, "deserialize")
 
-    if load_with_marshmallow:
+    if marshmallow_load:
         try:
-            value = load_with_marshmallow(value)
+            value = marshmallow_load(value)
         except MarshmallowValidationError as e:
             raise ValidationError(e.data) from e
     elif callable(arg_type):

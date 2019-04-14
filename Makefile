@@ -16,7 +16,7 @@ tests: venv
 	$(VIRTUAL_ENV)/bin/py.test
 
 tests_coverage: venv
-	$(VIRTUAL_ENV)/bin/py.test --cov-report html:.reports/coverage --cov-config .coveragerc --cov-report term:skip-covered --cov djhug
+	$(VIRTUAL_ENV)/bin/py.test --cov-report html:.reports/coverage --cov-config .coveragerc --cov-report term:skip-covered --cov django_hug
 
 venv_init:
 	if [ ! -d $(VIRTUAL_ENV) ]; then \

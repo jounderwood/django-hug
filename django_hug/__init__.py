@@ -1,6 +1,5 @@
 import functools
-import inspect
-from typing import Callable, Optional, List
+from typing import Callable, Optional, List, Iterable
 
 from django.http import HttpResponseBadRequest
 from django.http import HttpResponseNotAllowed
@@ -8,9 +7,9 @@ from django.http import JsonResponse
 from django.urls import path as url_path, re_path as url_re_path
 from django.utils.functional import cached_property
 
-from django_hug.constants import HTTP, ContentTypes, EMPTY
-from django_hug.exceptions import HttpNotAllowed, ValidationError
 from django_hug.arguments import Spec, get_function_spec, get_value, load_value
+from django_hug.constants import HTTP, ContentTypes, EMPTY
+from django_hug.exceptions import HttpNotAllowed, ValidationError, Error
 
 
 class route:
@@ -20,7 +19,7 @@ class route:
     accept = ContentTypes.JSON
     response_headers: Optional[dict] = None
 
-    def __init__(self, response_headers=None, accept=HTTP.ALL):
+    def __init__(self, response_headers: dict = None, accept: Iterable = HTTP.ALL):
         self.accept = accept
         self.response_headers = response_headers
 
@@ -37,7 +36,7 @@ class route:
             try:
                 kwargs = self.process_request(request, **kwargs)
                 response = self.fn(request, **kwargs)
-                response = self.process_response(response)
+                response = self.process_response(request, response)
             except Exception as e:
                 response = self.error_handler(e, request)
 
@@ -72,12 +71,18 @@ class route:
 
         return kwargs
 
-    def process_response(self, response):
+    def process_response(self, request, response):
         if isinstance(response, (dict, list)):
-            response = JsonResponse(response, safe=False)
+            status = 201 if request.method == HTTP.POST else 200
+            response = JsonResponse(response, status=status, safe=False)
+
+        if self.response_headers:
+            for name, value in self.response_headers.items():
+                response[name] = value
+
         return response
 
-    def error_handler(self, e, request):
+    def error_handler(self, e: Exception, request):
         if isinstance(e, HttpNotAllowed):
             response = HttpResponseNotAllowed(self.accept)
         elif isinstance(e, ValidationError):

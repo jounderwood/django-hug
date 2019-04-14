@@ -2,11 +2,11 @@ import json
 from typing import Union
 
 
-class DjhugError(Exception):
+class Error(Exception):
     pass
 
 
-class RequestError(DjhugError):
+class RequestError(Error):
     pass
 
 
@@ -25,7 +25,7 @@ class ValidationError(ValueError, RequestError):
         super().__init__(self, msg)
 
 
-class HttpResponseError(DjhugError):
+class HttpResponseError(Error):
     status = 400
 
 
