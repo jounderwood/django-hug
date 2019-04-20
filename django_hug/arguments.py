@@ -1,14 +1,31 @@
+import datetime as dt
+import decimal
 import inspect
 import json
+import uuid
 from typing import Callable, List, NamedTuple
 
 from django.http import RawPostDataException
-from marshmallow import ValidationError as MarshmallowValidationError
+from marshmallow import ValidationError
 from marshmallow import fields, Schema
+from marshmallow.exceptions import SCHEMA
 
-from django_hug.exceptions import ValidationError
 from django_hug.constants import EMPTY, HTTP, ContentTypes
 from django_hug.directives import get_directive
+
+
+TYPE_MAPPING = {
+    str: fields.String,
+    bytes: fields.String,
+    dt.datetime: fields.DateTime,
+    int: fields.Integer,
+    float: fields.Float,
+    uuid.UUID: fields.UUID,
+    dt.time: fields.Time,
+    dt.date: fields.Date,
+    dt.timedelta: fields.TimeDelta,
+    decimal.Decimal: fields.Decimal,
+}
 
 
 class Arg(NamedTuple):
@@ -65,30 +82,44 @@ def get_value(name, request, kwargs=None):
     return val
 
 
-def load_value(value, arg_type):
-    if not arg_type or arg_type is EMPTY:
+def load_value(value, kind: Callable, default=EMPTY):
+    if not kind or kind is EMPTY:
         return value
 
-    marshmallow_load = _get_method(arg_type, Schema, "load") or _get_method(arg_type, fields.Field, "deserialize")
+    if value is EMPTY:
+        if default is EMPTY:
+            raise ValidationError("Missing data for required field.")
+        else:
+            return default
 
-    if marshmallow_load:
+    if isinstance(kind, Schema):
+        value = kind.load(value)
+    elif inspect.isclass(kind) and issubclass(kind, Schema):
+        value = kind().load(value)
+    elif isinstance(kind, fields.Field):
+        value = kind.deserialize(value)
+    elif inspect.isclass(kind) and issubclass(kind, fields.Field):
+        value = kind().deserialize(value)
+    elif kind in TYPE_MAPPING:
+        value = TYPE_MAPPING[kind]().deserialize(value)
+    elif callable(kind):
         try:
-            value = marshmallow_load(value)
-        except MarshmallowValidationError as e:
-            raise ValidationError.from_marshmallow_error(e) from e
-    elif callable(arg_type):
-        try:
-            value = arg_type(value)
+            value = kind(value)
         except (TypeError, ValueError) as e:
             raise ValidationError(str(e)) from e
 
     return value
 
 
-def _get_method(arg_type, kls, method_name):
-    if isinstance(arg_type, kls):
-        method = getattr(arg_type, method_name)
-    else:
-        method = None
+def normalize_error_messages(field_name, e: ValidationError):
+    errors = {}
 
-    return method
+    normalized_messages = e.normalized_messages()
+    if SCHEMA in normalized_messages:
+        errors[field_name] = normalized_messages[SCHEMA]    # field
+    elif "body" == field_name:     # predefined directive,
+        errors = normalized_messages
+    else:
+        errors[field_name] = normalized_messages
+
+    return errors

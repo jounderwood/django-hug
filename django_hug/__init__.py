@@ -6,10 +6,11 @@ from django.http import HttpResponseNotAllowed
 from django.http import JsonResponse
 from django.urls import path as url_path, re_path as url_re_path
 from django.utils.functional import cached_property
+from marshmallow import ValidationError
 
-from django_hug.arguments import Spec, get_function_spec, get_value, load_value
+from django_hug.arguments import Spec, get_function_spec, get_value, load_value, normalize_error_messages
 from django_hug.constants import HTTP, ContentTypes, EMPTY
-from django_hug.exceptions import HttpNotAllowed, ValidationError, Error
+from django_hug.exceptions import HttpNotAllowed, Error
 
 
 class route:
@@ -37,7 +38,7 @@ class route:
                 kwargs = self.process_request(request, **kwargs)
                 response = self.fn(request, **kwargs)
                 response = self.process_response(request, response)
-            except Error as e:
+            except (Error, ValidationError) as e:
                 response = self.error_handler(e, request)
 
             return response
@@ -53,21 +54,15 @@ class route:
         args = self.spec.args[1:]  # ignore request
 
         for arg in args:
-            name = arg.name
             val = get_value(arg.name, request, kwargs)
 
-            if val is EMPTY and arg.default is EMPTY:
-                errors[name] = "Missing data for required field"
-                continue
-
-            if val is not EMPTY:
-                try:
-                    kwargs[name] = load_value(val, arg.arg_type)
-                except ValidationError as e:
-                    errors[arg.name] = e.message or e.fields_errors
+            try:
+                kwargs[arg.name] = load_value(val, arg.arg_type, default=arg.default)
+            except ValidationError as e:
+                errors.update(normalize_error_messages(arg.name, e))
 
         if errors:
-            raise ValidationError(**errors)
+            raise ValidationError(errors)
 
         return kwargs
 
@@ -87,7 +82,7 @@ class route:
         if isinstance(e, HttpNotAllowed):
             response = HttpResponseNotAllowed(self.accept)
         elif isinstance(e, ValidationError):
-            response = JsonResponse({"errors": e.fields_errors}, status=400)
+            response = JsonResponse({"errors": e.messages}, status=400)
         else:
             raise e
 

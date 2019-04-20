@@ -133,8 +133,8 @@ def test_simple_validation_errors_ok(client, with_urlpatterns, routes: django_hu
     assert resp.status_code == 400, resp.content
     assert json.loads(resp.content) == {
         "errors": {
-            "year": "Missing data for required field",
-            "month": "invalid literal for int() with base 10: 'unknown'",
+            "year": ["Missing data for required field."],
+            "month": ["Not a valid integer."],
         }
     }
 
@@ -157,8 +157,8 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djan
     assert resp.status_code == 400, resp.content
     assert json.loads(resp.content) == {
         "errors": {
-            "quantity": "Missing data for required field.",
-            "q1": "Missing data for required field.",
-            "q3": "Not a valid integer.",
+            "quantity": ["Missing data for required field."],
+            "q1": ["Missing data for required field."],
+            "q3": ["Not a valid integer."],
         }
     }
