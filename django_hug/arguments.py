@@ -44,6 +44,7 @@ class Spec(NamedTuple):
 
 
 def get_function_spec(fn: Callable) -> Spec:
+    fn = get_unwrapped_function(fn)
     signature = inspect.signature(fn)
 
     return Spec(
@@ -53,6 +54,15 @@ def get_function_spec(fn: Callable) -> Spec:
         ],
         return_type=signature.return_annotation,
     )
+
+
+def get_unwrapped_function(fn):
+    while True:
+        wrapped = getattr(fn, "__wrapped__", None)
+        if wrapped is None:
+            break
+        fn = wrapped
+    return fn
 
 
 def get_value(name, request, kwargs=None):
@@ -90,7 +100,7 @@ def load_value(value, kind: Callable, default=EMPTY):
         if default is EMPTY:
             raise ValidationError("Missing data for required field.")
         else:
-            return default
+            return EMPTY
 
     if isinstance(kind, Schema):
         value = kind.load(value)
@@ -116,8 +126,8 @@ def normalize_error_messages(field_name, e: ValidationError):
 
     normalized_messages = e.normalized_messages()
     if SCHEMA in normalized_messages:
-        errors[field_name] = normalized_messages[SCHEMA]    # field
-    elif "body" == field_name:     # predefined directive,
+        errors[field_name] = normalized_messages[SCHEMA]  # field
+    elif "body" == field_name:  # predefined directive,
         errors = normalized_messages
     else:
         errors[field_name] = normalized_messages

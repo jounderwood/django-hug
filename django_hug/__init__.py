@@ -24,7 +24,7 @@ class route:
         self.accept = accept
         self.response_headers = response_headers
 
-    def __call__(self, fn=None, *args, **kwargs):
+    def __call__(self, fn):
         self.fn = fn
         self.spec = get_function_spec(fn)
 
@@ -57,7 +57,9 @@ class route:
             val = get_value(arg.name, request, kwargs)
 
             try:
-                kwargs[arg.name] = load_value(val, arg.arg_type, default=arg.default)
+                val = load_value(val, arg.arg_type, default=arg.default)
+                if val is not EMPTY:
+                    kwargs[arg.name] = val
             except ValidationError as e:
                 errors.update(normalize_error_messages(arg.name, e))
 
