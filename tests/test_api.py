@@ -97,6 +97,7 @@ def test_custom_headers(client, with_urlpatterns, routes: django_hug.Routes):
     assert resp["X-Accel-Expires"] == "20"
 
 
+@pytest.mark.skip("Not supported yet")
 def test_multiple_routes(client, with_urlpatterns, routes: django_hug.Routes):
     @routes.post("post/")
     @routes.get("get_patch/<str:name>/")
@@ -163,6 +164,7 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djan
     }
 
 
+@pytest.mark.skip("Not supported yet")
 def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
     def decorator(fn):
         @wraps(fn)
@@ -192,3 +194,16 @@ def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
 
     assert resp.status_code == 200, resp.content
     assert json.loads(resp.content) == {"name": "aaa", "from_decorator": 1, "no_wrap_decorator": 1}
+
+
+@pytest.mark.parametrize("path", ("test/", "/test/"))
+@pytest.mark.parametrize("prefix", ("api", "/api", "api/", "/api/"))
+def test_routes_prefix(client, with_urlpatterns, prefix, path):
+    routes = django_hug.Routes(prefix=prefix)
+
+    @routes.get(path)
+    def view(request, name: str = None):
+        return {}
+
+    with_urlpatterns(routes.urls())
+    assert client.get("/api/test/").status_code == 200

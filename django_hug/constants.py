@@ -23,3 +23,10 @@ class ContentTypes:
     JSON = "application/json"
     FORM = "multipart/form-data"
     FORM_URLENCODED = "application/x-www-form-urlencoded"
+
+
+class JsonStyleFormat:
+    CAMELCASE = "camelcase"
+    UNDERSCORE = "underscore"
+
+    ALL = (CAMELCASE, UNDERSCORE)
