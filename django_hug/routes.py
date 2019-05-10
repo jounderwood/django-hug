@@ -62,9 +62,16 @@ class route:
 
         for arg in args:
             val = get_value(arg.name, request, kwargs)
+            default = arg.default
 
             try:
-                val = load_value(val, arg.arg_type, default=arg.default)
+                if val is EMPTY:
+                    if default is EMPTY:
+                        raise ValidationError("Missing data for required field.")
+                    else:
+                        continue
+
+                val = load_value(val, arg.arg_type)
                 if val is not EMPTY:
                     kwargs[arg.name] = val
             except ValidationError as e:

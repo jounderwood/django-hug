@@ -179,10 +179,10 @@ def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
 
         return wrap
 
-    @routes.get("test/")
     @decorator_no_wrap
     @require_GET
     @decorator
+    @routes.get("test/")
     def view(request, name: str, from_decorator=None):
         loc = locals()
         del loc["request"]
@@ -207,3 +207,25 @@ def test_routes_prefix(client, with_urlpatterns, prefix, path):
 
     with_urlpatterns(routes.urls())
     assert client.get("/api/test/").status_code == 200
+
+
+def test_no_annotation(client, with_urlpatterns, routes: django_hug.Routes):
+    @routes.get("test/")
+    def view(request, year, day: int = None):
+        loc = locals()
+        del loc["request"]
+        return loc
+
+    with_urlpatterns(list(routes.urls()))
+
+    resp: HttpResponse = client.get("/test/?day=1")
+
+    assert resp.status_code == 400, resp.content
+    assert json.loads(resp.content) == {
+        "errors": {"year": ["Missing data for required field."]}
+    }
+
+    resp: HttpResponse = client.get("/test/?day=1&year=111")
+
+    assert resp.status_code == 200, resp.content
+    assert json.loads(resp.content) == {"day": 1, "year": "111"}

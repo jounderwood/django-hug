@@ -92,15 +92,9 @@ def get_value(name, request, kwargs=None):
     return val
 
 
-def load_value(value, kind: Callable, default=EMPTY):
+def load_value(value, kind: Callable):
     if not kind or kind is EMPTY:
         return value
-
-    if value is EMPTY:
-        if default is EMPTY:
-            raise ValidationError("Missing data for required field.")
-        else:
-            return EMPTY
 
     if isinstance(kind, Schema):
         value = kind.load(value)
