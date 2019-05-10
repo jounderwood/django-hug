@@ -51,6 +51,7 @@ def get_function_spec(fn: Callable) -> Spec:
         args=[
             Arg(name=name, arg_type=param.annotation, default=param.default)
             for name, param in signature.parameters.items()
+            if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)
         ],
         return_type=signature.return_annotation,
     )

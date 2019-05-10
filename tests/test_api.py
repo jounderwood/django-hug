@@ -164,7 +164,6 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djan
     }
 
 
-@pytest.mark.skip("Not supported yet")
 def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
     def decorator(fn):
         @wraps(fn)
@@ -179,21 +178,23 @@ def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
 
         return wrap
 
-    @decorator_no_wrap
+    @routes.get("test/")
     @require_GET
     @decorator
-    @routes.get("test/")
-    def view(request, name: str, from_decorator=None):
+    # @decorator_no_wrap
+    def view(request, name: str, **kwargs):
         loc = locals()
         del loc["request"]
         return loc
 
     with_urlpatterns(list(routes.get_urlpatterns()))
 
-    resp: HttpResponse = client.get("/test/?name=aaa")
+    resp: HttpResponse = client.post("/test/")
+    assert resp.status_code == 405, resp.content
 
+    resp: HttpResponse = client.get("/test/?name=aaa")
     assert resp.status_code == 200, resp.content
-    assert json.loads(resp.content) == {"name": "aaa", "from_decorator": 1, "no_wrap_decorator": 1}
+    assert json.loads(resp.content) == {"name": "aaa", "kwargs": {"from_decorator": 1, "no_wrap_decorator": 1}}
 
 
 @pytest.mark.parametrize("path", ("test/", "/test/"))
@@ -221,11 +222,24 @@ def test_no_annotation(client, with_urlpatterns, routes: django_hug.Routes):
     resp: HttpResponse = client.get("/test/?day=1")
 
     assert resp.status_code == 400, resp.content
-    assert json.loads(resp.content) == {
-        "errors": {"year": ["Missing data for required field."]}
-    }
+    assert json.loads(resp.content) == {"errors": {"year": ["Missing data for required field."]}}
 
     resp: HttpResponse = client.get("/test/?day=1&year=111")
 
     assert resp.status_code == 200, resp.content
     assert json.loads(resp.content) == {"day": 1, "year": "111"}
+
+
+def test_args_kwargs_ok(client, with_urlpatterns, routes: django_hug.Routes):
+    @routes.get("test/")
+    def view(request, name, *args, **kwargs):
+        loc = locals()
+        del loc["request"]
+        return loc
+
+    with_urlpatterns(list(routes.get_urlpatterns()))
+
+    resp: HttpResponse = client.get("/test/?name=John")
+
+    assert resp.status_code == 200, resp.content
+    assert json.loads(resp.content) == {"name": "John", "args": [], "kwargs": {}}
