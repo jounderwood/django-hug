@@ -2,8 +2,6 @@ import re
 from functools import partial
 from typing import Callable, Optional, Union
 
-from django.conf import settings
-
 from django_hug.constants import JsonStyleFormat
 
 UNDERSCORE = (re.compile("(.)([A-Z][a-z]+)"), re.compile("([a-z0-9])([A-Z])"))
@@ -41,16 +39,19 @@ def _transform(content, transformator):
 camelcase = partial(_transform, transformator=camelcase_text)
 underscore = partial(_transform, transformator=underscore_text)
 
+allowed_formatters = {JsonStyleFormat.CAMELCASE: camelcase, JsonStyleFormat.UNDERSCORE: underscore}
+
 
 def get_formatter(format: Optional[Union[str, Callable]]) -> Optional[Callable]:
     if format is None:
         return None
 
     if isinstance(format, str):
-        if format not in JsonStyleFormat.ALL:
-            raise ValueError(f"Allowed values for format - {JsonStyleFormat.ALL}")
+        allowed_formatter_names = list(allowed_formatters.keys())
+        if format not in allowed_formatter_names:
+            raise ValueError(f"Allowed values for format - {allowed_formatter_names}")
 
-        formatter = {JsonStyleFormat.CAMELCASE: camelcase, JsonStyleFormat.UNDERSCORE: underscore}.get(format)
+        formatter = allowed_formatters[format]
 
     elif callable(format):
         formatter = format

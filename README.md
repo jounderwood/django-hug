@@ -1,5 +1,8 @@
 django-hug
 ==========================
+[![Build Status](https://api.cirrus-ci.com/github/jounderwood/django-hug.svg?branch=master)](https://cirrus-ci.com/github/jounderwood/django-hug)
+[![Coverage Status](https://coveralls.io/repos/github/jounderwood/django-hug/badge.svg?branch=master)](https://coveralls.io/github/jounderwood/django-hug?branch=master)
+
 Package for working with Django urls/views and request/response validation in more convenient way. 
 Inspired by beautiful [hug](https://github.com/timothycrosley/hug).
 
@@ -31,7 +34,7 @@ In your urls.py specify new endpoints
 ```python
 from . import views
 
-urlpatterns = views.routes.urls()
+urlpatterns = views.routes.get_urlpatterns()
 ```
 
 Thats all, now you can make requests to new API endpoints with convenient data validation

@@ -16,7 +16,7 @@ def test_simple_get_ok(client, with_urlpatterns, routes: django_hug.Routes):
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.get("/123/alarm/?q1=23.2000&wat=meh")
 
@@ -31,7 +31,7 @@ def test_simple_get_regex_ok(client, with_urlpatterns, routes: django_hug.Routes
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.get("/000/")
 
@@ -49,7 +49,7 @@ def test_simple_post_ok(client, with_urlpatterns, routes: django_hug.Routes):
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.post("/purchase/?q=param", data={"product_id": 999, "quantity": 20})
 
@@ -68,7 +68,7 @@ def test_marshmallow_whole_body_post_ok(client, with_urlpatterns, routes: django
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.post("/purchase/", data={"product_id": 123})
 
@@ -86,7 +86,7 @@ def test_custom_headers(client, with_urlpatterns, routes: django_hug.Routes):
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.get("/test/", data={"name": "gizmo"})
 
@@ -107,7 +107,7 @@ def test_multiple_routes(client, with_urlpatterns, routes: django_hug.Routes):
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.post("/post/", data={"name": None, "number": "11"})
     assert resp.status_code == 201, resp.content
@@ -129,7 +129,7 @@ def test_simple_validation_errors_ok(client, with_urlpatterns, routes: django_hu
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.get("/test/?month=unknown&day=1")
 
@@ -150,7 +150,7 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djan
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.post("/test/?q2=1&q3=aaa", data={"id": 123})
 
@@ -188,7 +188,7 @@ def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.get("/test/?name=aaa")
 
@@ -205,7 +205,7 @@ def test_routes_prefix(client, with_urlpatterns, prefix, path):
     def view(request, name: str = None):
         return {}
 
-    with_urlpatterns(routes.urls())
+    with_urlpatterns(routes.get_urlpatterns())
     assert client.get("/api/test/").status_code == 200
 
 
@@ -216,7 +216,7 @@ def test_no_annotation(client, with_urlpatterns, routes: django_hug.Routes):
         del loc["request"]
         return loc
 
-    with_urlpatterns(list(routes.urls()))
+    with_urlpatterns(list(routes.get_urlpatterns()))
 
     resp: HttpResponse = client.get("/test/?day=1")
 

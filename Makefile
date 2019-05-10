@@ -1,24 +1,17 @@
-PROJECT = django-hug
+PROJECT = django_hug
 
 PYTHON_VER = python3.7
 PYTHON_SYSTEM_PATH = "$(readlink $(which $(PYTHON_VER)))"
 
 REQUIREMENTS = requirements.txt
 REQUIREMENTS_DEV = requirements-dev.txt
-VIRTUAL_ENV := $(dir $(abspath $(lastword $(MAKEFILE_LIST)))).venv$(PYTHON_VERSION)
+VIRTUAL_ENV := $(dir $(abspath $(lastword $(MAKEFILE_LIST)))).venv
 PYTHON := $(VIRTUAL_ENV)/bin/python
-PIP_CONF = pip.conf
 TEST_PYPI = https://test.pypi.org/legacy/
-TEST_SETTINGS = settings_test
 
-
-tests: venv
-	$(VIRTUAL_ENV)/bin/py.test
-
-tests_coverage: venv
-	$(VIRTUAL_ENV)/bin/py.test --cov-report html:.reports/coverage --cov-config .coveragerc --cov-report term:skip-covered --cov django_hug
 
 venv_init:
+	pip install virtualenv
 	if [ ! -d $(VIRTUAL_ENV) ]; then \
 		virtualenv -p $(PYTHON_SYSTEM_PATH) --prompt="($(PROJECT)) " $(VIRTUAL_ENV); \
 	fi
@@ -27,6 +20,19 @@ venv:  venv_init
 	$(VIRTUAL_ENV)/bin/pip install -r $(REQUIREMENTS)
 	$(VIRTUAL_ENV)/bin/pip install -r $(REQUIREMENTS_DEV)
 	ln -sf $(VIRTUAL_ENV)/bin/activate activate
+
+
+tests: venv
+	$(VIRTUAL_ENV)/bin/py.test
+
+tests_coverage: venv
+	$(VIRTUAL_ENV)/bin/py.test --cov $(PROJECT)
+
+lint:
+	$(VIRTUAL_ENV)/bin/black -l 120 --check $(PROJECT)
+
+coveralls:
+	$(VIRTUAL_ENV)/bin/coveralls
 
 
 clean_venv:

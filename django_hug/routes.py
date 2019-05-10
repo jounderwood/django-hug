@@ -1,8 +1,8 @@
 import functools
 from typing import Callable, Optional, List, Iterable
 from urllib.parse import urljoin
+
 from django.conf import settings
-from django.http import HttpResponseBadRequest
 from django.http import HttpResponseNotAllowed
 from django.http import JsonResponse
 from django.urls import path as url_path, re_path as url_re_path
@@ -10,7 +10,7 @@ from django.utils.functional import cached_property
 from marshmallow import ValidationError
 
 from django_hug.arguments import Spec, get_function_spec, get_value, load_value, normalize_error_messages
-from django_hug.constants import HTTP, ContentTypes, EMPTY, JsonStyleFormat
+from django_hug.constants import HTTP, ContentTypes, EMPTY
 from django_hug.exceptions import HttpNotAllowed, Error
 from django_hug.format import get_formatter
 
@@ -138,7 +138,7 @@ class Routes:
         self._routes.append(_route)
         return _route
 
-    def urls(self):
+    def get_urlpatterns(self):
         return [r.urlpattern for r in self._routes]
 
     def get(self, path, kwargs=None, name=None, re=False, response_headers=None):

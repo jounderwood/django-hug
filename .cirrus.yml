@@ -1,0 +1,16 @@
+tests_and_coverage_task:
+
+  container:
+    matrix:
+      - image: python:3.6
+      - image: python:latest
+  environment:
+    COVERALLS_REPO_TOKEN: ENCRYPTED[517befbb0a9de73fa740967b40a99a72fa80509c68a50be9ceea30f431a7bedd5d1cea5f45e31460344b21a10fa2510e]
+  venv_cache:
+    folder: .venv
+    fingerprint_script: cat requirements.txt requirements-dev.txt | grep .
+    populate_script: make venv
+  tests_script:
+    - make tests_coverage
+    - make lint
+    - make coveralls
