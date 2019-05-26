@@ -164,6 +164,7 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djan
     }
 
 
+@pytest.mark.skip("Not supported yet")
 def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
     def decorator(fn):
         @wraps(fn)
@@ -181,7 +182,7 @@ def test_decorators(client, with_urlpatterns, routes: django_hug.Routes):
     @routes.get("test/")
     @require_GET
     @decorator
-    # @decorator_no_wrap
+    @decorator_no_wrap
     def view(request, name: str, **kwargs):
         loc = locals()
         del loc["request"]
