@@ -4,7 +4,7 @@ import django
 import pytest
 from django.test import override_settings
 
-import django_hug
+import djhug
 
 urlpatterns = []  # noqa
 
@@ -75,4 +75,4 @@ def with_urlpatterns(monkeypatch):
 
 @pytest.fixture
 def routes():
-    return django_hug.Routes()
+    return djhug.Routes()

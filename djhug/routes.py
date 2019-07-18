@@ -12,18 +12,15 @@ from djhug.utils import decorator_with_arguments
 
 VIEW_ATTR_NAME = "__djhug_options__"
 
-_list = field(default_factory=list)
-_dict = field(default_factory=dict)
-
 
 @dataclass
 class ViewOptions:
     spec: Spec = None
 
-    accepted_methods: List[str] = _list
-    response_additional_headers: Dict[str, str] = _dict
-    request_converters: List[Callable] = _list
-    response_converters: List[Callable] = _list
+    accepted_methods: List[str] = field(default_factory=list)
+    response_additional_headers: Dict[str, str] = field(default_factory=dict)
+    request_converters: List[Callable] = field(default_factory=list)
+    response_converters: List[Callable] = field(default_factory=list)
 
     @classmethod
     def get_or_contribute(cls, fn):
@@ -90,7 +87,7 @@ class Routes:
         prefix: Optional[str] = None,
         args: Optional[Dict[str, any]] = None,
         accept: Optional[str] = None,
-        **options,
+        **_,
     ):
         def wrap(fn):
             fn = ViewOptions.register(fn, args=args)
@@ -120,17 +117,17 @@ class Routes:
     def get_urlpatterns(self):
         return [v.path_handler(route=v.path, view=v.fn, kwargs=v.kwargs, name=v.name) for v in self._registered_views]
 
-    def get(self, path, kwargs=None, name=None, re=False):
+    def get(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.GET)
 
-    def post(self, path, kwargs=None, name=None, re=False):
+    def post(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.POST)
 
-    def put(self, path, kwargs=None, name=None, re=False):
+    def put(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.PUT)
 
-    def patch(self, path, kwargs=None, name=None, re=False):
+    def patch(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.PATCH)
 
-    def delete(self, path, kwargs=None, name=None, re=False):
+    def delete(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.DELETE)
