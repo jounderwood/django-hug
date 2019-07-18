@@ -4,10 +4,10 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from marshmallow.validate import Range
 
-import django_hug
+import djhug
 from marshmallow import fields
 
-routes = django_hug.Routes()
+routes = djhug.Routes()
 
 
 @routes.get("^$", re=True)
@@ -38,11 +38,8 @@ def index3(request, year, name:int, date: datetime):
     return loc
 
 
-@django_hug.route()
+@djhug.route()
 def index4(request, arg: str):
     loc = locals()
     del loc["request"]
     return loc
-
-
-# NO ANNOTATIONS BUG
