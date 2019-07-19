@@ -20,3 +20,13 @@ def decorator_with_arguments(function: Callable):
             return lambda real_function: function(real_function, *args, **kwargs)
 
     return new_decorator
+
+
+def import_var(path, default=None):
+    path, attr = path.rsplit('.', 1)
+    try:
+        mod = __import__(path, None, None, [attr])
+        val = getattr(mod, attr)
+    except (ImportError, AttributeError):
+        val = default
+    return val

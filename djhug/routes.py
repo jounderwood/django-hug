@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 from djhug.arguments import Spec
 from djhug.constants import HTTP
-from djhug.utils import decorator_with_arguments
+from djhug.utils import decorator_with_arguments, import_var
 
 VIEW_ATTR_NAME = "__djhug_options__"
 
@@ -68,7 +68,8 @@ class Routes:
     _registered_views: List["_RegisteredRoute"]
 
     class _RegisteredRoute(NamedTuple):
-        fn: Callable
+        fn: str
+        fn_path: str
         path_handler: Callable
         kwargs: Dict
         path: str
@@ -89,15 +90,19 @@ class Routes:
         accept: Optional[str] = None,
         **_,
     ):
-        def wrap(fn):
+        def wrap(fn: Callable):
             fn = ViewOptions.register(fn, args=args)
             if accept:
                 opts = ViewOptions.get_or_contribute(fn)
                 opts.add_accepted_methods(accept)
 
+            fn_mod = fn.__module__
+            fn_name = fn.__name__
+
             self._registered_views.append(
                 self._RegisteredRoute(
                     fn=fn,
+                    fn_path=f"{fn_mod}.{fn_name}",
                     kwargs=kwargs or {},
                     path=self._form_path(path, prefix),
                     path_handler=re_path if re else url_path,
@@ -115,7 +120,13 @@ class Routes:
         return path.lstrip("/")
 
     def get_urlpatterns(self):
-        return [v.path_handler(route=v.path, view=v.fn, kwargs=v.kwargs, name=v.name) for v in self._registered_views]
+        urlpatterns = []
+        for v in self._registered_views:
+            view = import_var(v.fn_path) or v.fn
+            url = v.path_handler(route=v.path, view=view, kwargs=v.kwargs, name=v.name)
+            urlpatterns.append(url)
+
+        return urlpatterns
 
     def get(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.GET)
