@@ -14,7 +14,7 @@ VIEW_ATTR_NAME = "__djhug_options__"
 
 
 @dataclass
-class ViewOptions:
+class Options:
     spec: Spec = None
 
     accepted_methods: List[str] = field(default_factory=list)
@@ -23,7 +23,8 @@ class ViewOptions:
     response_converters: List[Callable] = field(default_factory=list)
 
     @classmethod
-    def get_or_contribute(cls, fn):
+    def get_or_contribute(cls, fn: Callable) -> "Options":
+        """ Get or add special attribute to function with class `ViewOptions` instance and return it """
         if hasattr(fn, VIEW_ATTR_NAME):
             options = getattr(fn, VIEW_ATTR_NAME)
         else:
@@ -33,20 +34,27 @@ class ViewOptions:
         return options
 
     @classmethod
-    def register(cls, fn, args=None):
+    def register(cls, fn: Callable, args: Dict[str, any] = None) -> Callable:
+        """ Add options to function if not present, parse function signature and add spec to options """
         opts = cls.get_or_contribute(fn)
+        _hash = hash(fn)
+
+        if opts.spec is not None:
+            raise RuntimeError("Can't register multiple routes for one function")
+
         opts.spec = Spec.get(fn, arg_types_override=args)
+        opts._hash = hash(fn)
 
         return fn
 
-    def add_accepted_methods(self, *methods):
+    def add_accepted_methods(self, *methods: str):
         methods = set(map(lambda x: str(x).upper(), methods))
         self.accepted_methods += [method for method in methods if method not in self.accepted_methods]
 
-    def update_headers(self, **headers):
+    def update_headers(self, **headers: str):
         self.response_additional_headers.update(headers)
 
-    def add_request_converters(self, *converters):
+    def add_request_converters(self, *converters: List[Callable]):
         self.request_converters += self._clean_converters(self.request_converters, converters)
 
     def add_response_converters(self, *converters):
@@ -59,21 +67,15 @@ class ViewOptions:
 
 @decorator_with_arguments
 def route(fn: Callable, *_, args: Optional[Dict[str, any]] = None, **__):
-    return ViewOptions.register(fn, args=args)
+    Options.register(fn, args=args)
+
+    return fn
 
 
 class Routes:
     __slots__ = ("_registered_views", "prefix")
 
-    _registered_views: List["_RegisteredRoute"]
-
-    class _RegisteredRoute(NamedTuple):
-        fn: str
-        fn_path: str
-        path_handler: Callable
-        kwargs: Dict
-        path: str
-        name: str
+    _registered_views: List[Dict]
 
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix
@@ -91,23 +93,20 @@ class Routes:
         **_,
     ):
         def wrap(fn: Callable):
-            fn = ViewOptions.register(fn, args=args)
+            fn = Options.register(fn, args=args)
             if accept:
-                opts = ViewOptions.get_or_contribute(fn)
+                opts = Options.get_or_contribute(fn)
                 opts.add_accepted_methods(accept)
 
-            fn_mod = fn.__module__
-            fn_name = fn.__name__
-
             self._registered_views.append(
-                self._RegisteredRoute(
-                    fn=fn,
-                    fn_path=f"{fn_mod}.{fn_name}",
-                    kwargs=kwargs or {},
-                    path=self._form_path(path, prefix),
-                    path_handler=re_path if re else url_path,
-                    name=name,
-                )
+                {
+                    "fn": fn,
+                    "fn_path": f"{fn.__module__}.{fn.__name__}",
+                    "kwargs": kwargs or {},
+                    "path": self._form_path(path, prefix),
+                    "path_handler": re_path if re else url_path,
+                    "name": name,
+                }
             )
             return fn
 
@@ -122,8 +121,8 @@ class Routes:
     def get_urlpatterns(self):
         urlpatterns = []
         for v in self._registered_views:
-            view = import_var(v.fn_path) or v.fn
-            url = v.path_handler(route=v.path, view=view, kwargs=v.kwargs, name=v.name)
+            view = import_var(v["fn_path"]) or v["fn"]
+            url = v["path_handler"](route=v["path"], view=view, kwargs=v["kwargs"], name=v["name"])
             urlpatterns.append(url)
 
         return urlpatterns
