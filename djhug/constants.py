@@ -23,3 +23,6 @@ class ContentTypes:
     JSON = "application/json"
     FORM = "multipart/form-data"
     FORM_URLENCODED = "application/x-www-form-urlencoded"
+
+
+VIEW_ATTR_NAME = "__djhug_options__"

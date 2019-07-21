@@ -1,13 +1,9 @@
 import json
-from functools import wraps
 
 import pytest
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_GET
-from marshmallow import fields
+from django.http import HttpResponse
 
-from djhug.arguments import Spec
-from djhug.routes import route, Options, Routes
+from djhug.routes import route, Routes
 from tests.utils import json_response
 
 
@@ -25,7 +21,7 @@ def test_register_django_simple_url(client, with_urlpatterns, routes: Routes):
 
 def test_register_django_regex_url(client, with_urlpatterns, routes: Routes):
     @routes.get("api/(?P<year>[0-9]{4})/", re=True)
-    def view(request, year: int):
+    def view(request, year: str):
         return json_response(locals())
 
     with_urlpatterns(routes.get_urlpatterns())
@@ -49,4 +45,3 @@ def test_only_one_django_route_per_view(routes: Routes):
         @routes.get("/1/")
         def view(*_):
             pass
-
