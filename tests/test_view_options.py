@@ -1,13 +1,8 @@
-import json
-from functools import wraps
-
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_GET
 from marshmallow import fields
 
+from djhug import route
 from djhug.arguments import Spec
-from djhug.routes import route, Options, Routes
-from tests.utils import json_response
+from djhug.routes import Options
 
 
 def test_options_contribute():

@@ -3,7 +3,8 @@ import json
 import pytest
 from django.http import HttpResponse
 
-from djhug.routes import route, Routes
+from djhug import route
+from djhug.routes import Routes
 from tests.utils import json_response
 
 

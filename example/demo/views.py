@@ -1,11 +1,9 @@
 from datetime import datetime
 
-from django.shortcuts import render
-from django.http import HttpResponse
+from marshmallow import fields
 from marshmallow.validate import Range
 
 import djhug
-from marshmallow import fields
 
 routes = djhug.Routes()
 
@@ -32,7 +30,7 @@ def index2(request, year, name: int = "aaa"):
 
 
 @routes.get("2/(?P<year>[0-9]{4})/", re=True)
-def index3(request, year, name:int, date: datetime):
+def index3(request, year, name: int, date: datetime):
     loc = locals()
     del loc["request"]
     return loc

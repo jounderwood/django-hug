@@ -3,17 +3,11 @@ from typing import List, Callable, Dict, Optional
 from urllib.parse import urljoin
 
 from django.urls import path as url_path, re_path
+from django.utils.module_loading import import_string
 
 from djhug.constants import HTTP
 from djhug.middleware import ViewWrapper
 from djhug.options import Options
-from djhug.utils import decorator_with_arguments, import_var
-
-
-@decorator_with_arguments
-def route(fn: Callable, *_, args: Optional[Dict[str, any]] = None, **__):
-    Options.register(fn, args=args)
-    return wraps(fn)(ViewWrapper(fn))
 
 
 class Routes:
@@ -26,15 +20,15 @@ class Routes:
         self._registered_views = []
 
     def route(
-            self,
-            path: str,
-            kwargs: Optional[Dict] = None,
-            name: Optional[str] = None,
-            re: bool = False,
-            prefix: Optional[str] = None,
-            args: Optional[Dict[str, any]] = None,
-            accept: Optional[str] = None,
-            **_,
+        self,
+        path: str,
+        kwargs: Optional[Dict] = None,
+        name: Optional[str] = None,
+        re: bool = False,
+        prefix: Optional[str] = None,
+        args: Optional[Dict[str, any]] = None,
+        accept: Optional[str] = None,
+        **_,
     ):
         def wrap(fn: Callable):
             fn = self._add_djhug_options(fn, args=args, accepted_methods=accept)
@@ -91,7 +85,11 @@ class Routes:
 
     @staticmethod
     def _create_urlpattern_with_view_wrapper(params: Dict):
-        view = import_var(params["fn_path"]) or params["fn"]
+
+        try:
+            view = import_string(params["fn_path"])
+        except ImportError:
+            view = params["fn"]
 
         view = wraps(view)(ViewWrapper(view))
 

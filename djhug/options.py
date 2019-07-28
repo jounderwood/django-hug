@@ -3,6 +3,7 @@ from typing import List, Callable, Dict
 
 from djhug.arguments import Spec
 from djhug.constants import VIEW_ATTR_NAME
+from djhug.format import is_valid_request_formatter, is_valid_response_formatter
 
 
 @dataclass
@@ -11,8 +12,10 @@ class Options:
 
     accepted_methods: List[str] = field(default_factory=list)
     response_additional_headers: Dict[str, str] = field(default_factory=dict)
-    request_converters: List[Callable] = field(default_factory=list)
-    response_converters: List[Callable] = field(default_factory=list)
+    request_formatter: Callable = None
+    response_formatter: Callable = None
+    camelcased_response_data: bool = False
+    underscored_request_data: bool = False
 
     @classmethod
     def get_or_contribute(cls, fn: Callable) -> "Options":
@@ -29,13 +32,11 @@ class Options:
     def register(cls, fn: Callable, args: Dict[str, any] = None) -> Callable:
         """ Add options to function if not present, parse function signature and add spec to options """
         opts = cls.get_or_contribute(fn)
-        _hash = hash(fn)
 
         if opts.spec is not None:
             raise RuntimeError("Can't register multiple routes for one function")
 
         opts.spec = Spec.get(fn, arg_types_override=args)
-        opts._hash = hash(fn)
 
         return fn
 
@@ -46,12 +47,18 @@ class Options:
     def update_headers(self, **headers: str):
         self.response_additional_headers.update(headers)
 
-    def add_request_converters(self, *converters: List[Callable]):
-        self.request_converters += self._clean_converters(self.request_converters, converters)
+    def set_request_formatter(self, formatter: Callable):
+        if not is_valid_request_formatter(formatter):
+            raise ValueError(
+                "Formatter %r is invalid, formatter must be function decorated with "
+                "`djhug.formatter` decorator" % formatter
+            )
+        self.request_formatter = formatter
 
-    def add_response_converters(self, *converters):
-        self.response_converters += self._clean_converters(self.response_converters, converters)
-
-    @staticmethod
-    def _clean_converters(current_converters, converters):
-        return [converter for converter in set(converters) if converter not in current_converters]
+    def set_response_formatter(self, formatter: Callable):
+        if not is_valid_response_formatter(formatter):
+            raise ValueError(
+                "Formatter %r is invalid, formatter must be function decorated with "
+                "`djhug.formatter` decorator" % formatter
+            )
+        self.response_formatter = formatter

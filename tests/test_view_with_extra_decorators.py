@@ -2,10 +2,10 @@ import json
 from functools import wraps
 
 import pytest
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.views.decorators.http import require_GET
 
-from djhug.routes import Routes, route
+from djhug.routes import Routes
 from tests.utils import json_response
 
 test_routes = Routes()

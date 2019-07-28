@@ -13,7 +13,7 @@ from marshmallow.exceptions import SCHEMA
 
 from django_hug.constants import EMPTY, HTTP, ContentTypes
 from django_hug.directives import get_directive
-
+from djhug.utils import get_unwrapped_function
 
 TYPE_MAPPING = {
     str: fields.String,
@@ -48,7 +48,7 @@ class Spec:
     @classmethod
     def get(cls, fn: Callable, arg_types_override=None) -> "Spec":
         arg_types_override = arg_types_override or {}
-        fn = cls._get_unwrapped(fn)
+        fn = get_unwrapped_function(fn)
         fn = inspect.signature(fn)
 
         return Spec(
@@ -59,15 +59,6 @@ class Spec:
             ],
             return_type=fn.return_annotation,
         )
-
-    @staticmethod
-    def _get_unwrapped(fn):
-        while True:
-            wrapped = getattr(fn, "__wrapped__", None)
-            if wrapped is None:
-                break
-            fn = wrapped
-        return fn
 
 
 def get_value(name, request, kwargs=None):
