@@ -10,9 +10,8 @@ from marshmallow import ValidationError
 from marshmallow import fields, Schema
 from marshmallow.exceptions import SCHEMA
 
-from django_hug.constants import EMPTY, HTTP
-from django_hug.directives import get_directive
-from djhug.utils import get_unwrapped_function
+from .utils import get_unwrapped_function
+from .constants import EMPTY, HTTP
 
 TYPE_MAPPING = {
     str: fields.String,
@@ -62,10 +61,6 @@ class Spec:
 
 def get_value(name: str, request: HttpRequest, kwargs: Optional[dict] = None, body: Optional[dict] = None):
     val = EMPTY
-
-    directive = get_directive(name)
-    if directive:
-        val = directive(request)
 
     if val is EMPTY and kwargs:
         val = kwargs.get(name, EMPTY)

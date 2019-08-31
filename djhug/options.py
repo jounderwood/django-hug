@@ -2,8 +2,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 from typing import List, Dict
 
-from django_hug.arguments import get_unwrapped_function
-from .arguments import Spec
+from .arguments import Spec, get_unwrapped_function
 from .constants import VIEW_ATTR_NAME
 from .utils import decorator_with_arguments
 
