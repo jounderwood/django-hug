@@ -1,7 +1,7 @@
 import logging
 from collections import Mapping
 from functools import wraps
-from typing import Callable, Iterable, TYPE_CHECKING
+from typing import Callable, Iterable, TYPE_CHECKING, Optional
 
 from django.http import HttpRequest, JsonResponse, HttpResponseNotAllowed
 from django.utils.deprecation import MiddlewareMixin
@@ -10,6 +10,7 @@ from marshmallow import ValidationError
 from djhug.arguments import normalize_error_messages, load_value, get_value
 from djhug.constants import VIEW_ATTR_NAME, EMPTY, HTTP
 from djhug.exceptions import HttpNotAllowed, Error
+from djhug.formatters import get_request_parser
 
 if TYPE_CHECKING:
     from djhug.routes import Options
@@ -18,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class RequestsHandler:
+    parse_body_for_methods = HTTP.WITH_BODY
+
     def __init__(self, view):
         self.view: Callable = view
         self.opts: "Options" = getattr(view, VIEW_ATTR_NAME)
@@ -28,7 +31,7 @@ class RequestsHandler:
 
     def process(self, request, *args, **kwargs):
         try:
-            kwargs = self.process_request(request, **kwargs)
+            kwargs = self.process_request(request, kwargs)
             response = self.view(request, *args, **kwargs)
             response = self.process_response(request, response)
         except (Error, ValidationError) as e:
@@ -36,17 +39,21 @@ class RequestsHandler:
 
         return response
 
-    def process_request(self, request, *args, **kwargs):
+    def process_request(self, request, kwargs):
         opts = self.opts
         errors = {}
 
-        if request.method not in opts.accepted_methods:
+        method = request.method.upper()
+
+        if method not in opts.accepted_methods:
             raise HttpNotAllowed
 
         args = opts.spec.args[1:]  # ignore request
 
+        body = self._get_request_body(request)
+
         for arg in args:
-            val = get_value(arg.name, request, kwargs)
+            val = get_value(arg.name, request, kwargs, body)
             default = arg.default
 
             try:
@@ -66,6 +73,25 @@ class RequestsHandler:
             raise ValidationError(errors)
 
         return kwargs
+
+    def _get_request_body(self, request) -> Optional[any]:
+        if request.method.upper() not in self.parse_body_for_methods:
+            return
+
+        content_type = request.content_type.split(";")[0].lower()
+        parser = get_request_parser(content_type)
+
+        if not parser:
+            raise ValidationError({"body": "Failed to parse request body, parser for %s is not found" % content_type})
+
+        try:
+            body = parser(request)
+        except (ValueError, ValidationError):
+            raise ValidationError(
+                {"body": "Failed to parse request body as %s, used parser %s" % (content_type, parser)}
+            )
+
+        return body
 
     def process_response(self, request, response):
         opts = self.opts

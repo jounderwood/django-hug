@@ -2,10 +2,10 @@ from collections import Callable
 
 import pytest
 
-from djhug import request_formatter, response_formatter
-from djhug.constants import REQUEST_FORMATTER_ATTR_NAME, RESPONSE_FORMATTER_ATTR_NAME
+from djhug import request_parser, response_formatter
+from djhug.constants import REQUEST_PARSER_ATTR_NAME, RESPONSE_FORMATTER_ATTR_NAME
 from djhug.formatters import (
-    get_request_formatters,
+    get_request_parsers,
     get_response_formatters,
     is_valid_request_formatter,
     is_valid_response_formatter,
@@ -15,8 +15,8 @@ from djhug.formatters import (
 @pytest.mark.parametrize(
     "decorator, get_function, is_valid, attr_name",
     (
-        (request_formatter, get_request_formatters, is_valid_request_formatter, REQUEST_FORMATTER_ATTR_NAME),
-        (response_formatter, get_response_formatters, is_valid_response_formatter, RESPONSE_FORMATTER_ATTR_NAME),
+            (request_parser, get_request_parsers, is_valid_request_formatter, REQUEST_PARSER_ATTR_NAME),
+            (response_formatter, get_response_formatters, is_valid_response_formatter, RESPONSE_FORMATTER_ATTR_NAME),
     ),
 )
 def test_formatter_decorator(decorator, get_function, is_valid, attr_name):
@@ -29,11 +29,11 @@ def test_formatter_decorator(decorator, get_function, is_valid, attr_name):
     def fn_1(data):
         return data
 
-    @decorator(mime_type=[])
+    @decorator(content_type=[])
     def fn_2(data):
         return data
 
-    @decorator(mime_type=("application/msgpack", "application/x-msgpack"))
+    @decorator(content_type=("application/msgpack", "application/x-msgpack"))
     def fn_3(data):
         return data
 

@@ -8,7 +8,7 @@ def test_req_resp_view_decorators():
     def resp_format(data):
         return data
 
-    @djhug.request.register_formatter
+    @djhug.request.register_parser
     def req_format(request):
         return request.POST
 

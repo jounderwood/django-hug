@@ -15,6 +15,7 @@ class HTTP:
     TRACE = "TRACE"
 
     ALL = (CONNECT, DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, TRACE)
+    WITH_BODY = (POST, PUT, PATCH)
 
 
 class ContentTypes:
@@ -27,5 +28,5 @@ class ContentTypes:
 
 VIEW_ATTR_NAME = "__djhug_options__"
 DIRECTIVE_ATTR_NAME = "__djhug_directive__"
-REQUEST_FORMATTER_ATTR_NAME = "__djhug_request_formatter__"
+REQUEST_PARSER_ATTR_NAME = "__djhug_request_formatter__"
 RESPONSE_FORMATTER_ATTR_NAME = "__djhug_response_formatter__"

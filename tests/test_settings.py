@@ -1,11 +1,11 @@
 from django.test import override_settings
 
-from djhug import request_formatter, response_formatter
-from djhug.formatters import get_request_formatters, get_response_formatters
+from djhug import request_parser, response_formatter
+from djhug.formatters import get_request_parsers, get_response_formatters
 from djhug.settings import Settings
 
 
-@request_formatter("application/x-test")
+@request_parser("application/x-test")
 def request_formatter_test(request):
     return request.POST
 
@@ -21,8 +21,8 @@ def test_register_request_formatters_ok():
     with override_settings(DJHUG_REQUEST_FORMATTERS=["tests.test_settings.request_formatter_test"]):
         assert Settings().request_formatters == ["tests.test_settings.request_formatter_test"]
 
-        assert "application/x-test" in get_request_formatters()
-        assert get_request_formatters()["application/x-test"] == request_formatter_test
+        assert "application/x-test" in get_request_parsers()
+        assert get_request_parsers()["application/x-test"] == request_formatter_test
 
 
 def test_register_response_formatters_ok():

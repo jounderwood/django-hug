@@ -3,15 +3,15 @@ import decimal
 import inspect
 import uuid
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Dict
 
 from django.http import HttpRequest
 from marshmallow import ValidationError
 from marshmallow import fields, Schema
 from marshmallow.exceptions import SCHEMA
 
-from .utils import get_unwrapped_function
 from .constants import EMPTY, HTTP
+from .utils import get_unwrapped_function, camelcase_text
 
 TYPE_MAPPING = {
     str: fields.String,
@@ -59,16 +59,28 @@ class Spec:
         )
 
 
-def get_value(name: str, request: HttpRequest, kwargs: Optional[dict] = None, body: Optional[dict] = None):
+def get_value(
+    name: str,
+    request: HttpRequest,
+    kwargs: Optional[dict] = None,
+    body: Optional[dict] = None,
+    camelcased_data: Optional[bool] = None,
+):
     val = EMPTY
+
+    _name = name
+    if camelcased_data:
+        name = camelcase_text(name)
 
     if val is EMPTY and kwargs:
         val = kwargs.get(name, EMPTY)
 
     if val is EMPTY:
         val = request.GET.get(name, EMPTY)
+    if val is EMPTY and camelcased_data:
+        val = request.GET.get(_name, EMPTY)
 
-    if val is EMPTY and body is not None and request.method.upper() in [HTTP.POST, HTTP.PUT, HTTP.PATCH]:
+    if val is EMPTY and body is not None and request.method.upper() in HTTP.WITH_BODY:
         val = body.get(name, EMPTY)
 
     return val
@@ -97,13 +109,13 @@ def load_value(value, kind: Callable):
     return value
 
 
-def normalize_error_messages(field_name, e: ValidationError):
+def normalize_error_messages(field_name, e: ValidationError) -> Dict[str, list]:
     errors = {}
 
     normalized_messages = e.normalized_messages()
     if SCHEMA in normalized_messages:
         errors[field_name] = normalized_messages[SCHEMA]  # field
-    elif "body" == field_name:  # predefined directive,
+    elif "body" == field_name:  # predefined
         errors = normalized_messages
     else:
         errors[field_name] = normalized_messages
