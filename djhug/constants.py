@@ -26,5 +26,6 @@ class ContentTypes:
 
 
 VIEW_ATTR_NAME = "__djhug_options__"
+DIRECTIVE_ATTR_NAME = "__djhug_directive__"
 REQUEST_FORMATTER_ATTR_NAME = "__djhug_request_formatter__"
 RESPONSE_FORMATTER_ATTR_NAME = "__djhug_response_formatter__"

@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
-from typing import List, Callable, Dict
+from typing import Callable
+from typing import List, Dict
 
-from djhug.arguments import Spec
-from djhug.constants import VIEW_ATTR_NAME
-from djhug.format import is_valid_request_formatter, is_valid_response_formatter
+from django_hug.arguments import get_unwrapped_function
+from .arguments import Spec
+from .constants import VIEW_ATTR_NAME
+from .utils import decorator_with_arguments
 
 
 @dataclass
@@ -34,7 +36,7 @@ class Options:
         opts = cls.get_or_contribute(fn)
 
         if opts.spec is not None:
-            raise RuntimeError("Can't register multiple routes for one function")
+            raise RuntimeError("Can't create multiple routes for one function")
 
         opts.spec = Spec.get(fn, arg_types_override=args)
 
@@ -48,17 +50,39 @@ class Options:
         self.response_additional_headers.update(headers)
 
     def set_request_formatter(self, formatter: Callable):
-        if not is_valid_request_formatter(formatter):
-            raise ValueError(
-                "Formatter %r is invalid, formatter must be function decorated with "
-                "`djhug.formatter` decorator" % formatter
-            )
+        if not callable(formatter):
+            raise ValueError("Formatter %r must be callable" % formatter)
         self.request_formatter = formatter
 
     def set_response_formatter(self, formatter: Callable):
-        if not is_valid_response_formatter(formatter):
-            raise ValueError(
-                "Formatter %r is invalid, formatter must be function decorated with "
-                "`djhug.formatter` decorator" % formatter
-            )
+        if not callable(formatter):
+            raise ValueError("Formatter %r must be callable" % formatter)
         self.response_formatter = formatter
+
+
+@decorator_with_arguments
+def with_camelcased_response(fn: Callable):
+    Options.get_or_contribute(get_unwrapped_function(fn)).camelcased_response_data = True
+    return fn
+
+
+@decorator_with_arguments
+def with_underscored_request(fn: Callable):
+    Options.get_or_contribute(get_unwrapped_function(fn)).underscored_request_data = True
+    return fn
+
+
+def with_request_formatter(formatter: Callable):
+    def wrapper(fn: Callable):
+        Options.get_or_contribute(get_unwrapped_function(fn)).set_request_formatter(formatter)
+        return fn
+
+    return wrapper
+
+
+def with_response_formatter(formatter: Callable):
+    def wrapper(fn: Callable):
+        Options.get_or_contribute(get_unwrapped_function(fn)).set_response_formatter(formatter)
+        return fn
+
+    return wrapper

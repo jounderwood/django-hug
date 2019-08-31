@@ -1,7 +1,7 @@
 from django.test import override_settings
 
 from djhug import request_formatter, response_formatter
-from djhug.format import get_request_formatters, get_response_formatters
+from djhug.formatters import get_request_formatters, get_response_formatters
 from djhug.settings import Settings
 
 

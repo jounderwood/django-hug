@@ -1,13 +1,19 @@
-from functools import wraps
 from typing import List, Callable, Dict, Optional
 from urllib.parse import urljoin
 
 from django.urls import path as url_path, re_path
 from django.utils.module_loading import import_string
 
-from djhug.constants import HTTP
-from djhug.middleware import ViewWrapper
-from djhug.options import Options
+from .constants import HTTP
+from .options import Options
+from .requests_handler import RequestsHandler
+from .utils import decorator_with_arguments
+
+
+@decorator_with_arguments
+def route(fn: Callable, *_, args: Optional[Dict[str, any]] = None, **__):
+    fn = Options.register(fn, args=args)
+    return RequestsHandler.create(fn)
 
 
 class Routes:
@@ -47,12 +53,7 @@ class Routes:
         return wrap
 
     def get_urlpatterns(self):
-        urlpatterns = []
-        for params in self._registered_views:
-            url = self._create_urlpattern_with_view_wrapper(params)
-            urlpatterns.append(url)
-
-        return urlpatterns
+        return [self._create_urlpattern(params) for params in self._registered_views]
 
     def get(self, path: str, kwargs: Optional[Dict] = None, name: Optional[str] = None, re: bool = False):
         return self.route(path=path, kwargs=kwargs, name=name, re=re, accept=HTTP.GET)
@@ -84,13 +85,12 @@ class Routes:
         return path.lstrip("/")
 
     @staticmethod
-    def _create_urlpattern_with_view_wrapper(params: Dict):
-
+    def _create_urlpattern(params: Dict):
         try:
             view = import_string(params["fn_path"])
         except ImportError:
             view = params["fn"]
 
-        view = wraps(view)(ViewWrapper(view))
+        view = RequestsHandler.create(view)
 
         return params["path_handler"](route=params["path"], view=view, kwargs=params["kwargs"], name=params["name"])

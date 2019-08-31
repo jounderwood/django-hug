@@ -1,17 +1,16 @@
 import datetime as dt
 import decimal
 import inspect
-import json
 import uuid
 from dataclasses import dataclass
-from typing import Callable, List, NamedTuple
+from typing import Callable, List, Optional
 
-from django.http import RawPostDataException
+from django.http import HttpRequest
 from marshmallow import ValidationError
 from marshmallow import fields, Schema
 from marshmallow.exceptions import SCHEMA
 
-from django_hug.constants import EMPTY, HTTP, ContentTypes
+from django_hug.constants import EMPTY, HTTP
 from django_hug.directives import get_directive
 from djhug.utils import get_unwrapped_function
 
@@ -61,7 +60,7 @@ class Spec:
         )
 
 
-def get_value(name, request, kwargs=None):
+def get_value(name: str, request: HttpRequest, kwargs: Optional[dict] = None, body: Optional[dict] = None):
     val = EMPTY
 
     directive = get_directive(name)
@@ -74,16 +73,8 @@ def get_value(name, request, kwargs=None):
     if val is EMPTY:
         val = request.GET.get(name, EMPTY)
 
-    if val is EMPTY and request.method.upper() in [HTTP.POST, HTTP.PUT, HTTP.PATCH]:
-        if ContentTypes.JSON in request.content_type:
-            try:
-                # TODO: escape performing json.loads on every argument
-                body = json.loads(request.body.decode(request.encoding or "utf-8"))
-                val = body.get(name, EMPTY)
-            except (ValueError, RawPostDataException):
-                pass
-        else:
-            val = request.POST.get(name, EMPTY)
+    if val is EMPTY and body is not None and request.method.upper() in [HTTP.POST, HTTP.PUT, HTTP.PATCH]:
+        val = body.get(name, EMPTY)
 
     return val
 
