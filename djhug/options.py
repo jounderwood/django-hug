@@ -4,7 +4,7 @@ from typing import List, Dict
 
 from .arguments import Spec, get_unwrapped_function
 from .constants import VIEW_ATTR_NAME
-from .settings import settings
+from .settings import Settings
 from .utils import decorator_with_arguments
 
 
@@ -21,6 +21,8 @@ class Options:
     body_arg_name: Optional[str] = None
 
     def __post_init__(self):
+        settings = Settings()
+
         if settings.response_additional_headers is not None:
             self.response_additional_headers = settings.response_additional_headers
         if settings.camelcased_response_data is not None:
