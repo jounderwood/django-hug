@@ -3,17 +3,18 @@ from collections import Mapping
 from functools import wraps
 from typing import Callable, Iterable, TYPE_CHECKING, Optional
 
-from django.http import HttpRequest, JsonResponse, HttpResponseNotAllowed
+from django.http import HttpRequest, HttpResponseNotAllowed, HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 from marshmallow import ValidationError
 
-from djhug.arguments import normalize_error_messages, load_value, get_value
-from djhug.constants import VIEW_ATTR_NAME, EMPTY, HTTP
-from djhug.exceptions import HttpNotAllowed, Error
-from djhug.formatters import get_request_parser
+from .arguments import normalize_error_messages, load_value, get_value
+from .constants import VIEW_ATTR_NAME, EMPTY, HTTP, ContentTypes
+from .exceptions import HttpNotAllowed, Error
+from .formatters import get_request_parser, get_response_formatter
+from .utils import underscore, camelcase
 
 if TYPE_CHECKING:
-    from djhug.routes import Options
+    from .routes import Options
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +31,18 @@ class RequestsHandler:
         return wraps(view)(cls(view))
 
     def process(self, request, *args, **kwargs):
+        content_type = request.content_type.split(";")[0].lower()
+
         try:
-            kwargs = self.process_request(request, kwargs)
+            kwargs = self.process_request(request, kwargs, content_type=content_type)
             response = self.view(request, *args, **kwargs)
-            response = self.process_response(request, response)
+            response = self.process_response(request, response, content_type)
         except (Error, ValidationError) as e:
-            response = self.handle_errors(e, request)
+            response = self.handle_errors(e, content_type)
 
         return response
 
-    def process_request(self, request, kwargs):
+    def process_request(self, request, kwargs, content_type: str):
         opts = self.opts
         errors = {}
 
@@ -50,11 +53,14 @@ class RequestsHandler:
 
         args = opts.spec.args[1:]  # ignore request
 
-        body = self._get_request_body(request)
+        body = self._get_request_body(request, content_type)
 
         for arg in args:
             val = get_value(arg.name, request, kwargs, body)
             default = arg.default
+
+            if arg.name == self.opts.body_arg_name and val is EMPTY:
+                val = body
 
             try:
                 if val is EMPTY:
@@ -74,44 +80,59 @@ class RequestsHandler:
 
         return kwargs
 
-    def _get_request_body(self, request) -> Optional[any]:
+    def _get_request_body(self, request, content_type) -> Optional[any]:
         if request.method.upper() not in self.parse_body_for_methods:
-            return
+            return {}
 
-        content_type = request.content_type.split(";")[0].lower()
         parser = get_request_parser(content_type)
 
         if not parser:
+            logger.warning("Failed to parse request body, parser for %s is not found", content_type)
             raise ValidationError({"body": "Failed to parse request body, parser for %s is not found" % content_type})
 
         try:
             body = parser(request)
         except (ValueError, ValidationError):
-            raise ValidationError(
-                {"body": "Failed to parse request body as %s, used parser %s" % (content_type, parser)}
-            )
+            logger.exception("Failed to parse request body as %s, used parser %s", content_type, parser)
+            raise ValidationError({"body": "Failed to parse request body as %s" % content_type})
+
+        if self.opts.underscored_request_data:
+            body = underscore(body)
 
         return body
 
-    def process_response(self, request, response):
+    def process_response(self, request, response, content_type):
         opts = self.opts
 
-        if isinstance(response, (dict, list)):
+        if not isinstance(response, HttpResponse):
+            # FIXME other methods
             status = 201 if request.method == HTTP.POST else 200
-            response = JsonResponse(response, status=status, safe=False)
+            response = self._create_response(content=response, content_type=content_type, status=status)
 
         for name, value in opts.response_additional_headers.items():
             response[name] = value
 
         return response
 
-    def handle_errors(self, e, request):
-        opts = self.opts
+    def _create_response(self, content, content_type, status):
+        if self.opts.camelcased_response_data:
+            content = camelcase(content)
+
+        formatter = get_response_formatter(content_type)
+
+        if not formatter:
+            content_type = ContentTypes.TEXT
+        else:
+            content = formatter(content)
+
+        return HttpResponse(content=content, content_type=content_type, status=status)
+
+    def handle_errors(self, e, content_type):
         # TODO: add custom exceptions formatting
         if isinstance(e, HttpNotAllowed):
-            response = HttpResponseNotAllowed(opts.accepted_methods)
+            response = HttpResponseNotAllowed(self.opts.accepted_methods)
         elif isinstance(e, ValidationError):
-            response = JsonResponse({"errors": e.messages}, status=400)
+            response = self._create_response(content={"errors": e.messages}, content_type=content_type, status=400)
         else:
             raise e
 

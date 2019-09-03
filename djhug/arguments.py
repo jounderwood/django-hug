@@ -10,7 +10,7 @@ from marshmallow import ValidationError
 from marshmallow import fields, Schema
 from marshmallow.exceptions import SCHEMA
 
-from .constants import EMPTY, HTTP
+from .constants import EMPTY
 from .utils import get_unwrapped_function, camelcase_text
 
 TYPE_MAPPING = {
@@ -60,15 +60,15 @@ class Spec:
 
 
 def get_value(
-    name: str,
-    request: HttpRequest,
-    kwargs: Optional[dict] = None,
-    body: Optional[dict] = None,
-    camelcased_data: Optional[bool] = None,
+        name: str,
+        request: HttpRequest,
+        kwargs: Optional[dict] = None,
+        body: Optional[dict] = None,
+        camelcased_data: Optional[bool] = None,
 ):
     val = EMPTY
 
-    _name = name
+    original_name = name
     if camelcased_data:
         name = camelcase_text(name)
 
@@ -78,9 +78,9 @@ def get_value(
     if val is EMPTY:
         val = request.GET.get(name, EMPTY)
     if val is EMPTY and camelcased_data:
-        val = request.GET.get(_name, EMPTY)
+        val = request.GET.get(original_name, EMPTY)
 
-    if val is EMPTY and body is not None and request.method.upper() in HTTP.WITH_BODY:
+    if val is EMPTY and body is not None:
         val = body.get(name, EMPTY)
 
     return val

@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, Optional
 from typing import List, Dict
 
 from .arguments import Spec, get_unwrapped_function
 from .constants import VIEW_ATTR_NAME
+from .settings import settings
 from .utils import decorator_with_arguments
 
 
@@ -13,10 +14,21 @@ class Options:
 
     accepted_methods: List[str] = field(default_factory=list)
     response_additional_headers: Dict[str, str] = field(default_factory=dict)
-    request_formatter: Callable = None
-    response_formatter: Callable = None
+    request_formatter: Optional[Callable] = None
+    response_formatter: Optional[Callable] = None
     camelcased_response_data: bool = False
     underscored_request_data: bool = False
+    body_arg_name: Optional[str] = None
+
+    def __post_init__(self):
+        if settings.response_additional_headers is not None:
+            self.response_additional_headers = settings.response_additional_headers
+        if settings.camelcased_response_data is not None:
+            self.camelcased_response_data = settings.camelcased_response_data
+        if settings.underscored_request_data is not None:
+            self.underscored_request_data = settings.underscored_request_data
+        if settings.body_arg_name is not None:
+            self.body_arg_name = settings.body_arg_name
 
     @classmethod
     def get_or_contribute(cls, fn: Callable) -> "Options":
@@ -58,22 +70,31 @@ class Options:
             raise ValueError("Formatter %r must be callable" % formatter)
         self.response_formatter = formatter
 
+    def set_body_arg_name(self, name: str):
+        if not isinstance(name, str):
+            raise ValueError("Body name must be string")
+        self.body_arg_name = name
+
+
+def _get_or_contribute(fn: Callable):
+    return Options.get_or_contribute(get_unwrapped_function(fn))
+
 
 @decorator_with_arguments
 def with_camelcased_response(fn: Callable):
-    Options.get_or_contribute(get_unwrapped_function(fn)).camelcased_response_data = True
+    _get_or_contribute(fn).camelcased_response_data = True
     return fn
 
 
 @decorator_with_arguments
 def with_underscored_request(fn: Callable):
-    Options.get_or_contribute(get_unwrapped_function(fn)).underscored_request_data = True
+    _get_or_contribute(fn).underscored_request_data = True
     return fn
 
 
 def with_request_formatter(formatter: Callable):
     def wrapper(fn: Callable):
-        Options.get_or_contribute(get_unwrapped_function(fn)).set_request_formatter(formatter)
+        _get_or_contribute(fn).set_request_formatter(formatter)
         return fn
 
     return wrapper
@@ -81,7 +102,15 @@ def with_request_formatter(formatter: Callable):
 
 def with_response_formatter(formatter: Callable):
     def wrapper(fn: Callable):
-        Options.get_or_contribute(get_unwrapped_function(fn)).set_response_formatter(formatter)
+        _get_or_contribute(fn).set_response_formatter(formatter)
+        return fn
+
+    return wrapper
+
+
+def rename_body_arg(name: str):
+    def wrapper(fn: Callable):
+        _get_or_contribute(fn).set_body_arg_name(name)
         return fn
 
     return wrapper

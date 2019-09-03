@@ -1,8 +1,14 @@
 from .formatters import request_parser, response_formatter
-from .options import with_request_formatter, with_response_formatter, with_camelcased_response, with_underscored_request
+from .options import (
+    with_request_formatter,
+    with_response_formatter,
+    with_camelcased_response,
+    with_underscored_request,
+    rename_body_arg,
+)
 from .routes import Routes, route
 
-__all__ = ("route", "Routes", "request", "request_parser", "response", "response_formatter")
+__all__ = ("route", "Routes", "request", "request_parser", "response", "response_formatter", "rename_body_arg")
 
 
 class _Request:

@@ -8,13 +8,15 @@ from djhug.formatters import is_valid_request_formatter, is_valid_response_forma
 
 
 class Settings:
-    response_additional_headers: Dict[str, str] = None
+    response_additional_headers: Optional[Dict[str, str]] = None
 
     request_formatters: Optional[List[str]] = None
     response_formatters: Optional[List[str]] = None
 
     camelcased_response_data: bool = False
     underscored_request_data: bool = False
+
+    body_arg_name: str = "body"
 
     def __init__(self):
         self._prefix = "djhug_"
