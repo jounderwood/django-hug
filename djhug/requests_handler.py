@@ -84,7 +84,7 @@ class RequestsHandler:
         if request.method.upper() not in self.parse_body_for_methods:
             return {}
 
-        parser = get_request_parser(content_type)
+        parser = self.opts.request_parser or get_request_parser(content_type)
 
         if not parser:
             logger.warning("Failed to parse request body, parser for %s is not found", content_type)
@@ -118,7 +118,7 @@ class RequestsHandler:
         if self.opts.camelcased_response_data:
             content = camelcase(content)
 
-        formatter = get_response_formatter(content_type)
+        formatter = self.opts.response_formatter or get_response_formatter(content_type)
 
         if not formatter:
             content_type = ContentTypes.TEXT

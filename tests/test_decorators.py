@@ -26,5 +26,5 @@ def test_req_resp_view_decorators():
     assert opts.underscored_request_data
     assert opts.camelcased_response_data
     assert opts.response_formatter == resp_format
-    assert opts.request_formatter == req_format
+    assert opts.request_parser == req_format
     assert opts.spec.arg_types_map == {"year": str, "request": EMPTY}

@@ -1,6 +1,6 @@
 from .formatters import request_parser, response_formatter
 from .options import (
-    with_request_formatter,
+    with_request_parser,
     with_response_formatter,
     with_camelcased_response,
     with_underscored_request,
@@ -12,7 +12,7 @@ __all__ = ("route", "Routes", "request", "request_parser", "response", "response
 
 
 class _Request:
-    format = staticmethod(with_request_formatter)
+    format = staticmethod(with_request_parser)
     underscored = staticmethod(with_underscored_request)
 
     register_parser = staticmethod(request_parser)

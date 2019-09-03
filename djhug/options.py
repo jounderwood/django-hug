@@ -14,7 +14,7 @@ class Options:
 
     accepted_methods: List[str] = field(default_factory=list)
     response_additional_headers: Dict[str, str] = field(default_factory=dict)
-    request_formatter: Optional[Callable] = None
+    request_parser: Optional[Callable] = None
     response_formatter: Optional[Callable] = None
     camelcased_response_data: bool = False
     underscored_request_data: bool = False
@@ -62,10 +62,10 @@ class Options:
     def update_headers(self, **headers: str):
         self.response_additional_headers.update(headers)
 
-    def set_request_formatter(self, formatter: Callable):
-        if not callable(formatter):
-            raise ValueError("Formatter %r must be callable" % formatter)
-        self.request_formatter = formatter
+    def set_request_parser(self, parser: Callable):
+        if not callable(parser):
+            raise ValueError("Request parser %r must be callable" % parser)
+        self.request_parser = parser
 
     def set_response_formatter(self, formatter: Callable):
         if not callable(formatter):
@@ -94,9 +94,9 @@ def with_underscored_request(fn: Callable):
     return fn
 
 
-def with_request_formatter(formatter: Callable):
+def with_request_parser(formatter: Callable):
     def wrapper(fn: Callable):
-        _get_or_contribute(fn).set_request_formatter(formatter)
+        _get_or_contribute(fn).set_request_parser(formatter)
         return fn
 
     return wrapper
