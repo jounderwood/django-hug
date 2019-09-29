@@ -1,4 +1,4 @@
-from typing import List, Callable, Dict, Optional
+from typing import List, Callable, Dict, Optional, Any
 from urllib.parse import urljoin
 
 from django.urls import path as url_path, re_path
@@ -11,7 +11,7 @@ from .utils import decorator_with_arguments
 
 
 @decorator_with_arguments
-def route(fn: Callable, *_, args: Optional[Dict[str, any]] = None, **__):
+def route(fn: Callable, *_, args: Optional[Dict[str, Any]] = None, **__):
     fn = Options.register(fn, args=args)
     return RequestsHandler.create(fn)
 
@@ -31,7 +31,7 @@ class Routes:
         kwargs: Optional[Dict] = None,
         name: Optional[str] = None,
         re: bool = False,
-        args: Optional[Dict[str, any]] = None,
+        args: Optional[Dict[str, Any]] = None,
         accept: Optional[str] = None,
         **_,
     ):

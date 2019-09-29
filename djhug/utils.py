@@ -14,6 +14,7 @@ def decorator_with_arguments(function: Callable):
     @decorator
     https://stackoverflow.com/a/14412901
     """
+
     @wraps(function)
     def new_decorator(*args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):

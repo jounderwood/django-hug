@@ -7,7 +7,7 @@ from djhug.constants import REQUEST_PARSER_ATTR_NAME, RESPONSE_FORMATTER_ATTR_NA
 from djhug.formatters import (
     get_request_parsers,
     get_response_formatters,
-    is_valid_request_formatter,
+    is_valid_request_parser,
     is_valid_response_formatter,
 )
 
@@ -15,8 +15,8 @@ from djhug.formatters import (
 @pytest.mark.parametrize(
     "decorator, get_function, is_valid, attr_name",
     (
-            (request_parser, get_request_parsers, is_valid_request_formatter, REQUEST_PARSER_ATTR_NAME),
-            (response_formatter, get_response_formatters, is_valid_response_formatter, RESPONSE_FORMATTER_ATTR_NAME),
+        (request_parser, get_request_parsers, is_valid_request_parser, REQUEST_PARSER_ATTR_NAME),
+        (response_formatter, get_response_formatters, is_valid_response_formatter, RESPONSE_FORMATTER_ATTR_NAME),
     ),
 )
 def test_formatter_decorator(decorator, get_function, is_valid, attr_name):

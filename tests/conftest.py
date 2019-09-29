@@ -10,16 +10,8 @@ urlpatterns = []  # noqa
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--no-pkgroot",
-        action="store_true",
-        default=False,
-    )
-    parser.addoption(
-        "--staticfiles",
-        action="store_true",
-        default=False,
-    )
+    parser.addoption("--no-pkgroot", action="store_true", default=False)
+    parser.addoption("--staticfiles", action="store_true", default=False)
 
 
 def pytest_configure(config):

@@ -1,14 +1,14 @@
-from typing import Dict
+from typing import Dict, Any
 from typing import List, Optional
 
 from django.conf import settings as global_settings
 from django.utils.module_loading import import_string
 
-from djhug.formatters import is_valid_request_formatter, is_valid_response_formatter
+from djhug.formatters import is_valid_request_parser, is_valid_response_formatter
 
 
 class Settings:
-    __shared_state = {}
+    __shared_state: Dict[str, Any] = {}
 
     response_additional_headers: Optional[Dict[str, str]] = None
 
@@ -36,7 +36,7 @@ class Settings:
 
         self.response_additional_headers = self.response_additional_headers or {}
 
-        self._register_formatters(attr_name="request_formatters", validator=is_valid_request_formatter)
+        self._register_formatters(attr_name="request_formatters", validator=is_valid_request_parser)
         self._register_formatters(attr_name="response_formatters", validator=is_valid_response_formatter)
 
     def _get_setting_name(self, setting):

@@ -51,7 +51,10 @@ class RequestsHandler:
         if method not in opts.accepted_methods:
             raise HttpNotAllowed
 
-        args = opts.spec.args[1:]  # ignore request
+        if opts.spec:
+            args = opts.spec.args[1:]  # ignore request
+        else:
+            args = []
 
         body = self._get_request_body(request, content_type)
 
@@ -80,7 +83,7 @@ class RequestsHandler:
 
         return kwargs
 
-    def _get_request_body(self, request, content_type) -> Optional[any]:
+    def _get_request_body(self, request, content_type) -> Optional[dict]:
         if request.method.upper() not in self.parse_body_for_methods:
             return {}
 

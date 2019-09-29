@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 from typing import List, Dict
 
 from .arguments import Spec, get_unwrapped_function
@@ -10,7 +10,7 @@ from .utils import decorator_with_arguments
 
 @dataclass
 class Options:
-    spec: Spec = None
+    spec: Optional[Spec] = None
 
     accepted_methods: List[str] = field(default_factory=list)
     response_additional_headers: Dict[str, str] = field(default_factory=dict)
@@ -44,7 +44,7 @@ class Options:
         return options
 
     @classmethod
-    def register(cls, fn: Callable, args: Dict[str, any] = None) -> Callable:
+    def register(cls, fn: Callable, args: Dict[str, Any] = None) -> Callable:
         """ Add options to function if not present, parse function signature and add spec to options """
         opts = cls.get_or_contribute(fn)
 
@@ -56,8 +56,8 @@ class Options:
         return fn
 
     def add_accepted_methods(self, *methods: str):
-        methods = set(map(lambda x: str(x).upper(), methods))
-        self.accepted_methods += [method for method in methods if method not in self.accepted_methods]
+        _methods = set(map(lambda x: str(x).upper(), methods))
+        self.accepted_methods += [method for method in _methods if method not in self.accepted_methods]
 
     def update_headers(self, **headers: str):
         self.response_additional_headers.update(headers)

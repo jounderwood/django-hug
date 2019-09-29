@@ -2,9 +2,9 @@
 import os
 import sys
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.path.append(os.path.dirname(os.getcwd()))
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ilovehug.settings')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ilovehug.settings")
 
     try:
         from django.core.management import execute_from_command_line

@@ -5,7 +5,8 @@ from .options import (
     with_camelcased_response,
     with_underscored_request,
     rename_body_arg,
-    with_response_additional_headers)
+    with_response_additional_headers,
+)
 from .routes import Routes, route
 
 __all__ = ("route", "Routes", "request", "request_parser", "response", "response_formatter", "rename_body_arg")

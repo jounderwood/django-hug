@@ -34,6 +34,7 @@ def test_register_django_regex_url(client, with_urlpatterns, routes: Routes):
 
 def test_only_one_simple_route_per_view():
     with pytest.raises(RuntimeError):
+
         @route("/")
         @route("/1/")
         def view(*_):
@@ -42,6 +43,7 @@ def test_only_one_simple_route_per_view():
 
 def test_only_one_django_route_per_view(routes: Routes):
     with pytest.raises(RuntimeError):
+
         @routes.get("/")
         @routes.get("/1/")
         def view(*_):

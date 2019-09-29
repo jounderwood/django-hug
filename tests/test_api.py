@@ -1,9 +1,7 @@
 import json
-from functools import wraps
 
 import pytest
 from django.http import HttpResponse
-from django.views.decorators.http import require_GET
 from marshmallow import Schema, fields
 
 import djhug
@@ -98,31 +96,6 @@ def test_custom_headers(client, with_urlpatterns, routes: djhug.Routes):
     assert resp["X-Accel-Expires"] == "20"
 
 
-@pytest.mark.skip("Not supported yet")
-def test_multiple_routes(client, with_urlpatterns, routes: djhug.Routes):
-    @routes.post("post/")
-    @routes.get("get_patch/<str:name>/")
-    @routes.patch("get_patch/<str:name>/")
-    def strange_view(request, name: str = None, number: int = None):
-        loc = locals()
-        del loc["request"]
-        return loc
-
-    with_urlpatterns(list(routes.get_urlpatterns()))
-
-    resp: HttpResponse = client.post("/post/", data={"name": None, "number": "11"})
-    assert resp.status_code == 201, resp.content
-    assert json.loads(resp.content) == {"number": 11}
-
-    resp: HttpResponse = client.get("/get_patch/wow/", data={"number": 5})
-    assert resp.status_code == 200, resp.content
-    assert json.loads(resp.content) == {"name": "wow", "number": 11}
-
-    resp: HttpResponse = client.patch("/get_patch/wow/")
-    assert resp.status_code == 200, resp.content
-    assert json.loads(resp.content) == {"name": "wow", "number": None}
-
-
 def test_simple_validation_errors_ok(client, with_urlpatterns, routes: djhug.Routes):
     @routes.get("test/")
     def view(request, year: int, month: int = 1, day: int = None):
@@ -163,40 +136,6 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djhu
             "q3": ["Not a valid integer."],
         }
     }
-
-
-@pytest.mark.skip("Not supported yet")
-def test_decorators(client, with_urlpatterns, routes: djhug.Routes):
-    def decorator(fn):
-        @wraps(fn)
-        def wrap(*args, **kwargs):
-            return fn(*args, from_decorator=1, **kwargs)
-
-        return wrap
-
-    def decorator_no_wrap(fn):
-        def wrap(*args, **kwargs):
-            return fn(*args, no_wrap_decorator=1, **kwargs)
-
-        return wrap
-
-    @routes.get("test/")
-    @require_GET
-    @decorator
-    @decorator_no_wrap
-    def view(request, name: str, **kwargs):
-        loc = locals()
-        del loc["request"]
-        return loc
-
-    with_urlpatterns(list(routes.get_urlpatterns()))
-
-    resp: HttpResponse = client.post("/test/")
-    assert resp.status_code == 405, resp.content
-
-    resp: HttpResponse = client.get("/test/?name=aaa")
-    assert resp.status_code == 200, resp.content
-    assert json.loads(resp.content) == {"name": "aaa", "kwargs": {"from_decorator": 1, "no_wrap_decorator": 1}}
 
 
 @pytest.mark.parametrize("path", ("test/", "/test/"))

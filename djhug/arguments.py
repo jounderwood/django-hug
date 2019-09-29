@@ -3,7 +3,7 @@ import decimal
 import inspect
 import uuid
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Dict
+from typing import Callable, List, Optional, Dict, Any, Type
 
 from django.http import HttpRequest
 from marshmallow import ValidationError
@@ -30,32 +30,32 @@ TYPE_MAPPING = {
 @dataclass
 class Arg:
     name: str
-    type: type
-    default: any
+    type: Type
+    default: Any
 
 
 @dataclass
 class Spec:
     args: List[Arg]
-    return_type: type
+    return_type: Any
 
     @property
     def arg_types_map(self):
         return {arg.name: arg.type for arg in self.args}
 
     @classmethod
-    def get(cls, fn: Callable, arg_types_override=None) -> "Spec":
+    def get(cls, fn: Callable, arg_types_override: Optional[Dict[str, Any]] = None) -> "Spec":
         arg_types_override = arg_types_override or {}
         fn = get_unwrapped_function(fn)
-        fn = inspect.signature(fn)
+        signature = inspect.signature(fn)
 
         return Spec(
             args=[
                 Arg(name=name, type=arg_types_override.get(name, param.annotation), default=param.default)
-                for name, param in fn.parameters.items()
+                for name, param in signature.parameters.items()
                 if param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD)
             ],
-            return_type=fn.return_annotation,
+            return_type=signature.return_annotation,
         )
 
 
@@ -86,7 +86,7 @@ def get_value(
     return val
 
 
-def load_value(value, kind: Callable):
+def load_value(value, kind: Type):
     if not kind or kind is EMPTY:
         return value
 

@@ -1,16 +1,16 @@
 import json
-from typing import Callable, Dict, Union, List, Optional
+from typing import Callable, Dict, Union, Optional, Iterable
 
 from django.core.serializers.json import DjangoJSONEncoder
 
 from djhug.constants import REQUEST_PARSER_ATTR_NAME, RESPONSE_FORMATTER_ATTR_NAME, ContentTypes
 
-_global_request_parsers = {}
-_global_response_formatters = {}
+_global_request_parsers: Dict[str, Callable] = {}
+_global_response_formatters: Dict[str, Callable] = {}
 
 
 def _register_formatter(
-    callback: Callable, content_type: Optional[Union[str, List[str]]], storage: dict, attr_name: str
+    callback: Callable, content_type: Optional[Union[str, Iterable[str]]], storage: dict, attr_name: str
 ):
     setattr(callback, attr_name, True)
 
@@ -28,7 +28,7 @@ def _register_formatter(
     return callback
 
 
-def request_parser(content_type: Optional[Union[str, List[str]]] = None):
+def request_parser(content_type: Optional[Union[str, Iterable[str]]] = None):
     def wrap(fn: Callable):
         _register_formatter(
             fn, content_type=content_type, storage=_global_request_parsers, attr_name=REQUEST_PARSER_ATTR_NAME
@@ -38,7 +38,7 @@ def request_parser(content_type: Optional[Union[str, List[str]]] = None):
     return wrap
 
 
-def response_formatter(content_type: Optional[Union[str, List[str]]] = None):
+def response_formatter(content_type: Optional[Union[str, Iterable[str]]] = None):
     def wrap(fn: Callable):
         _register_formatter(
             fn, content_type=content_type, storage=_global_response_formatters, attr_name=RESPONSE_FORMATTER_ATTR_NAME
@@ -48,7 +48,7 @@ def response_formatter(content_type: Optional[Union[str, List[str]]] = None):
     return wrap
 
 
-def is_valid_request_formatter(formatter: Callable) -> bool:
+def is_valid_request_parser(formatter: Callable) -> bool:
     return callable(formatter) and hasattr(formatter, REQUEST_PARSER_ATTR_NAME)
 
 

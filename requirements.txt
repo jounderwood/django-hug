@@ -1,2 +1,2 @@
 Django>=2.0
-marshmallow>=3.0.0rc4
+marshmallow>=3.0.0
