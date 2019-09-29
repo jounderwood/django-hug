@@ -5,7 +5,7 @@ from .options import (
     with_camelcased_response,
     with_underscored_request,
     rename_body_arg,
-)
+    with_response_additional_headers)
 from .routes import Routes, route
 
 __all__ = ("route", "Routes", "request", "request_parser", "response", "response_formatter", "rename_body_arg")
@@ -21,6 +21,7 @@ class _Request:
 class _Response:
     format = staticmethod(with_response_formatter)
     camelcased = staticmethod(with_camelcased_response)
+    add_headers = staticmethod(with_response_additional_headers)
 
     register_formatter = staticmethod(response_formatter)
 

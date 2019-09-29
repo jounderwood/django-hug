@@ -81,11 +81,11 @@ def multipart_request(request):
     return request.POST
 
 
-@request_parser(ContentTypes.JSON)
+@request_parser(("*", ContentTypes.JSON))
 def json_request(request):
     return json.loads(request.body.decode(request.encoding or "utf-8"))
 
 
-@response_formatter(ContentTypes.JSON)
+@response_formatter(("*", ContentTypes.JSON))
 def json_response(response_data) -> str:
     return json.dumps(response_data, cls=DjangoJSONEncoder)

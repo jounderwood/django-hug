@@ -24,7 +24,7 @@ class Options:
         settings = Settings()
 
         if settings.response_additional_headers is not None:
-            self.response_additional_headers = settings.response_additional_headers
+            self.response_additional_headers = dict(settings.response_additional_headers)
         if settings.camelcased_response_data is not None:
             self.camelcased_response_data = settings.camelcased_response_data
         if settings.underscored_request_data is not None:
@@ -105,6 +105,14 @@ def with_request_parser(formatter: Callable):
 def with_response_formatter(formatter: Callable):
     def wrapper(fn: Callable):
         _get_or_contribute(fn).set_response_formatter(formatter)
+        return fn
+
+    return wrapper
+
+
+def with_response_additional_headers(headers: dict):
+    def wrapper(fn: Callable):
+        _get_or_contribute(fn).update_headers(**headers)
         return fn
 
     return wrapper

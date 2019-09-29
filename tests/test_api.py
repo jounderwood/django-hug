@@ -8,8 +8,6 @@ from marshmallow import Schema, fields
 
 import djhug
 
-pytestmark = pytest.mark.skip
-
 
 def test_simple_get_ok(client, with_urlpatterns, routes: djhug.Routes):
     @routes.get("<int:year>/<str:name>/")
@@ -82,7 +80,8 @@ def test_marshmallow_whole_body_post_ok(client, with_urlpatterns, routes: djhug.
 
 
 def test_custom_headers(client, with_urlpatterns, routes: djhug.Routes):
-    @routes.get("test/", response_headers={"X-Accel-Expires": 20, "content-type": "text/html"})
+    @djhug.response.add_headers({"X-Accel-Expires": 20, "content-type": "text/html"})
+    @routes.get("test/")
     def view(request, name: str = None):
         loc = locals()
         del loc["request"]

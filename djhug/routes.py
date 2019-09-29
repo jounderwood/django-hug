@@ -31,7 +31,6 @@ class Routes:
         kwargs: Optional[Dict] = None,
         name: Optional[str] = None,
         re: bool = False,
-        prefix: Optional[str] = None,
         args: Optional[Dict[str, any]] = None,
         accept: Optional[str] = None,
         **_,
@@ -43,7 +42,7 @@ class Routes:
                     "fn": fn,
                     "fn_path": f"{fn.__module__}.{fn.__name__}",
                     "kwargs": kwargs or {},
-                    "path": self._form_path(path, prefix),
+                    "path": self._form_path(path),
                     "path_handler": re_path if re else url_path,
                     "name": name,
                 }
@@ -78,10 +77,9 @@ class Routes:
             opts.add_accepted_methods(accepted_methods)
         return fn
 
-    @staticmethod
-    def _form_path(path, prefix):
-        if prefix:
-            path = urljoin(f"/{prefix.strip('/')}/", path.lstrip("/"))
+    def _form_path(self, path):
+        if self.prefix:
+            path = urljoin(f"/{self.prefix.strip('/')}/", path.lstrip("/"))
         return path.lstrip("/")
 
     @staticmethod

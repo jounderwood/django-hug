@@ -60,11 +60,11 @@ class Spec:
 
 
 def get_value(
-        name: str,
-        request: HttpRequest,
-        kwargs: Optional[dict] = None,
-        body: Optional[dict] = None,
-        camelcased_data: Optional[bool] = None,
+    name: str,
+    request: HttpRequest,
+    kwargs: Optional[dict] = None,
+    body: Optional[dict] = None,
+    camelcased_data: Optional[bool] = None,
 ):
     val = EMPTY
 
