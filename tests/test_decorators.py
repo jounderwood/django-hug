@@ -13,7 +13,7 @@ def test_req_resp_view_decorators():
 
     @djhug.request.parser(req_parser)
     @djhug.request.underscored_body
-    @djhug.response.format(resp_renderer)
+    @djhug.response.renderer(resp_renderer)
     @djhug.route
     @djhug.response.camelcased
     def view(request, year: str):

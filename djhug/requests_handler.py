@@ -144,8 +144,7 @@ class RequestsHandler:
 
         if response_model:
             content = response_model(**content).dict()
-
-        if self.opts.camelcased_response_data:
+        elif self.opts.camelcased_response_data:
             content = camelcase(content)
 
         if not renderer:

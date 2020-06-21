@@ -50,8 +50,6 @@ def _transform(content: Union[str, dict, list], transformator):
         for element in content:
             new_list.append(_transform(element, transformator))
         return new_list
-    elif isinstance(content, str):
-        return transformator(content)
     else:
         return content
 
