@@ -146,6 +146,7 @@ cd example
 ```
 
 ## TODO
-* Add exception handler
-* Docs and example
+* Docs and examples
 * Coverage
+* Openapi, swagger
+* Add exception handler
