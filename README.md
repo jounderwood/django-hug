@@ -5,6 +5,7 @@ django-hug
 
 Package for working with Django urls/views and request/response validation in more convenient way. 
 Inspired by beautiful [hug](https://github.com/timothycrosley/hug).
+Powered by awesome [pydantic](https://github.com/samuelcolvin/pydantic).
 
 
 Getting Started
