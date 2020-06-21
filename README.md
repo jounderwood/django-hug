@@ -3,14 +3,16 @@ django-hug
 [![Build Status](https://api.cirrus-ci.com/github/jounderwood/django-hug.svg?branch=master)](https://cirrus-ci.com/github/jounderwood/django-hug)
 [![Coverage Status](https://coveralls.io/repos/github/jounderwood/django-hug/badge.svg?branch=master)](https://coveralls.io/github/jounderwood/django-hug?branch=master)
 
-Package for working with Django urls/views and request/response validation in more convenient way. 
+Package for working with Django urls/views and request/response validation in more convenient way.
+
 Inspired by beautiful [hug](https://github.com/timothycrosley/hug).
+
 Powered by awesome [pydantic](https://github.com/samuelcolvin/pydantic).
 
 
 Getting Started
 ===================
-Simple API building example with django-hug
+Simple API building example with django-hug.
 
 In your views module create routes and couple API endpoints. 
 ```python
