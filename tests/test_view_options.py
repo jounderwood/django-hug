@@ -1,19 +1,51 @@
-from marshmallow import fields
+from datetime import datetime
 
 from djhug import route
-from djhug.arguments import Spec
+from djhug.arguments import Spec, Arg, Body
+from djhug.constants import EMPTY
 from djhug.routes import Options
 
 
 def test_options_contribute():
     @route
-    def view(request, year: int, name: str, q1: float = 0, q2: str = "foo") -> dict:
+    def view(request, generic: int) -> dict:
         return locals()
 
     opts = view.__djhug_options__
     assert isinstance(opts, Options)
     assert isinstance(opts.spec, Spec)
-    assert [arg.name for arg in opts.spec.args] == ["request", "year", "name", "q1", "q2"]
+
+
+def test_view_inspect_args():
+    @route
+    def view(request, generic: int, no_annotation, date: datetime, *args, with_default: str = "foo", **kwargs) -> dict:
+        return locals()
+
+    opts = view.__djhug_options__
+    assert isinstance(opts, Options)
+    assert isinstance(opts.spec, Spec)
+
+    assert opts.spec.args == [
+        Arg(name="request", type=None, default=EMPTY),
+        Arg(name="generic", type=int, default=EMPTY),
+        Arg(name="no_annotation", type=None, default=EMPTY),
+        Arg(name="date", type=datetime, default=EMPTY),
+        Arg(name="with_default", type=str, default="foo"),
+    ]
+
+
+def test_view_inspect_body():
+    class ResponseModel(Body):
+        arg: int
+
+    @route
+    def view(request, data: ResponseModel):
+        return {}
+
+    opts = view.__djhug_options__
+
+    assert opts.spec.body_name == "data"
+    assert opts.spec.body_model is ResponseModel
 
 
 def test_options_contribute_decorator_call():
@@ -22,11 +54,3 @@ def test_options_contribute_decorator_call():
         return locals()
 
     assert isinstance(view.__djhug_options__, Options)
-
-
-def test_route_args_override():
-    @route(args={"a": fields.Int()})
-    def view(a: int = 1) -> dict:
-        return locals()
-
-    assert isinstance(view.__djhug_options__.spec.arg_types_map["a"], fields.Int)

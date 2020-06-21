@@ -1,4 +1,4 @@
-PROJECT = django_hug
+PROJECT = djhug
 
 PYTHON_VER = python3.7
 PYTHON_SYSTEM_PATH = "$(readlink $(which $(PYTHON_VER)))"
@@ -26,7 +26,7 @@ tests: venv
 	$(VIRTUAL_ENV)/bin/py.test
 
 tests_coverage: venv
-	$(VIRTUAL_ENV)/bin/py.test --cov $(PROJECT)
+	$(VIRTUAL_ENV)/bin/py.test --cov $(PROJECT) --cov-report html
 
 lint:
 	$(VIRTUAL_ENV)/bin/black -l 120 --check $(PROJECT)

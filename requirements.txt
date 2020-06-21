@@ -1,2 +1,4 @@
 Django>=2.0
-marshmallow>=3.0.0
+dataclasses;python_version<'3.7'
+pydantic
+wrapt

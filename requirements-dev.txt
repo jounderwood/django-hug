@@ -2,8 +2,8 @@
 
 black
 coveralls
-django-stubs>=1.1.0
-mypy==0.720
+django-stubs
+mypy
 pytest
 pytest-cov
 pytest-django

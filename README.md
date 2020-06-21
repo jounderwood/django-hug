@@ -127,3 +127,13 @@ Attention! Work In Progress
 * Add exception handler
 * Take into account content type for response
 * Cleanup tests
+
+
+
+req
+
+req check method (504 if not allowed)
+
+req negotiate mime type parse accept -> resp content-type
+
+req content-type body -> parse body data (post put and only)

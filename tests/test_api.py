@@ -2,9 +2,10 @@ import json
 
 import pytest
 from django.http import HttpResponse
-from marshmallow import Schema, fields
+from pydantic import PositiveFloat
 
 import djhug
+from djhug.arguments import Body
 
 
 def test_simple_get_ok(client, with_urlpatterns, routes: djhug.Routes):
@@ -55,16 +56,14 @@ def test_simple_post_ok(client, with_urlpatterns, routes: djhug.Routes):
     assert json.loads(resp.content) == {"name": "purchase", "q": "param", "product_id": 999, "quantity": 20}
 
 
-def test_marshmallow_whole_body_post_ok(client, with_urlpatterns, routes: djhug.Routes):
-    class RespSchema(Schema):
-        product_id = fields.Int(required=True)
-        quantity = fields.Int(required=True)
+def test_whole_body_post_ok(client, with_urlpatterns, routes: djhug.Routes):
+    class RespModel(Body):
+        product_id: int
+        quantity: int
 
     @routes.post("<str:name>/")
-    def view(request, name: str, body: RespSchema()):
-        loc = locals()
-        del loc["request"]
-        return loc
+    def view(request, name: str, body: RespModel):
+        return {"name": name, "body": body.dict()}
 
     with_urlpatterns(list(routes.get_urlpatterns()))
 
@@ -109,20 +108,21 @@ def test_simple_validation_errors_ok(client, with_urlpatterns, routes: djhug.Rou
 
     assert resp.status_code == 400, resp.content
     assert json.loads(resp.content) == {
-        "errors": {"year": ["Missing data for required field."], "month": ["Not a valid integer."]}
+        "errors": {
+            "month": [{"loc": ["__root__"], "msg": "value is not a valid integer", "type": "type_error.integer"}],
+            "year": [{"loc": ["year"], "msg": "field required", "type": "value_error.missing"}],
+        }
     }
 
 
-def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djhug.Routes):
-    class RespSchema(Schema):
-        id = fields.Int(required=True)
-        quantity = fields.Int(required=True)
+def test_with_body_model_validation_errors_ok(client, with_urlpatterns, routes: djhug.Routes):
+    class RespBody(Body):
+        id: int
+        quantity: int
 
     @routes.post("test/")
-    def view(request, body: RespSchema(), q1: int, q2: int, q3: fields.Int()):
-        loc = locals()
-        del loc["request"]
-        return loc
+    def view(request, body: RespBody, q1: int, q2: int, q3: PositiveFloat):
+        return {}
 
     with_urlpatterns(list(routes.get_urlpatterns()))
 
@@ -131,9 +131,9 @@ def test_marshmallow_validation_errors_ok(client, with_urlpatterns, routes: djhu
     assert resp.status_code == 400, resp.content
     assert json.loads(resp.content) == {
         "errors": {
-            "quantity": ["Missing data for required field."],
-            "q1": ["Missing data for required field."],
-            "q3": ["Not a valid integer."],
+            "body": [{"loc": ["quantity"], "msg": "field required", "type": "value_error.missing"}],
+            "q1": [{"loc": ["q1"], "msg": "field required", "type": "value_error.missing"}],
+            "q3": [{"loc": ["__root__"], "msg": "value is not a valid float", "type": "type_error.float"}],
         }
     }
 
@@ -163,7 +163,9 @@ def test_no_annotation(client, with_urlpatterns, routes: djhug.Routes):
     resp: HttpResponse = client.get("/test/?day=1")
 
     assert resp.status_code == 400, resp.content
-    assert json.loads(resp.content) == {"errors": {"year": ["Missing data for required field."]}}
+    assert json.loads(resp.content) == {
+        "errors": {"year": [{"loc": ["year"], "msg": "field required", "type": "value_error.missing"}]}
+    }
 
     resp: HttpResponse = client.get("/test/?day=1&year=111")
 
