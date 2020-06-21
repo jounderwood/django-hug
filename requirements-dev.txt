@@ -2,7 +2,10 @@
 
 black
 coveralls
+django-stubs
+mypy
 pytest
 pytest-cov
 pytest-django
 pytest-env
+pytest-mypy

@@ -4,22 +4,14 @@ import django
 import pytest
 from django.test import override_settings
 
-import django_hug
+import djhug
 
 urlpatterns = []  # noqa
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--no-pkgroot",
-        action="store_true",
-        default=False,
-    )
-    parser.addoption(
-        "--staticfiles",
-        action="store_true",
-        default=False,
-    )
+    parser.addoption("--no-pkgroot", action="store_true", default=False)
+    parser.addoption("--staticfiles", action="store_true", default=False)
 
 
 def pytest_configure(config):
@@ -75,4 +67,4 @@ def with_urlpatterns(monkeypatch):
 
 @pytest.fixture
 def routes():
-    return django_hug.Routes()
+    return djhug.Routes()

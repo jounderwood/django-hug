@@ -5,6 +5,7 @@ django-hug
 
 Package for working with Django urls/views and request/response validation in more convenient way. 
 Inspired by beautiful [hug](https://github.com/timothycrosley/hug).
+Powered by awesome [pydantic](https://github.com/samuelcolvin/pydantic).
 
 
 Getting Started
@@ -14,10 +15,10 @@ Simple API building example with django-hug
 In your views module create routes and couple API endpoints. 
 ```python
 # views.py
-import django_hug
-from marshmallow import fields
+import djhug
+from pydantic import PositiveInt
 
-routes = django_hug.Routes()
+routes = djhug.Routes()
 
 
 @routes.get('new/<int:year>/')
@@ -26,15 +27,15 @@ def simple(request, year, month: int):
 
 
 @routes.get('happy/<int:year>/')
-def mm_field(request, year, month: fields.Int(validate=Range(min=1, max=12)) = 1):
+def pydantic_field(request, year, month: PositiveInt = 1):
     return [year, month]
 ```
 
 In your urls.py specify new endpoints
 ```python
-from . import views
+from .views import routes
 
-urlpatterns = views.routes.get_urlpatterns()
+urlpatterns = routes.get_urlpatterns()
 ```
 
 Thats all, now you can make requests to new API endpoints with convenient data validation
@@ -43,53 +44,79 @@ curl http://127.0.0.1:8000/new/2019/?month=133
 
 >> {"year": 2019, "month": 133}
 ```
-and nice errors handling
-```bash
-curl http://127.0.0.1:8000/happy/2019/?month=133
-
->> {"errors": {"month": ["Must be between 1 and 12."]}}
-```
 
 Usage
 =====
-#### Regexp path
+## Regexp path
 You can also use regexp path
 ```python
 @routes.get("(?P<year>[0-9]{4})/", re=True)
 def index3(request, year, name: str):
-    loc = locals()
-    del loc["request"]
-    return loc
-
+    return {"year": year, "name": name}
 ```
 
-#### Directives
-Use builtin directive `body` to validate whole POST request
+## Request POST data model 
+Use `Body` base model to validate whole POST data using whole pydantic Model power
+
 ```python
 # views.py
-import django_hug
-from marshmallow import Schema, fields
+import djhug
+from pydantic import BaseModel
 
-routes = django_hug.Routes(prefix="api")
+routes = djhug.Routes(prefix="api")
 
-
-class RespSchema(Schema):
-    id = fields.Int(required=True)
-    quantity = fields.Int(required=True)
+class RespModel(djhug.Body):
+    id: int
+    quantity: int
 
 
 @routes.post("test/")
-def view(request, body: RespSchema()):
-    return body
+def view(request, body: RespModel):
+    assert isinstance(body, RespModel)
+    assert isinstance(body, BaseModel)
+
+    return {"id": body.id}
 ```
 
-#### Routes prefix
+## Camelcase response data and response renderers 
+You can enable response data camelcase formatting
+
+```python
+# views.py
+import djhug
+from djhug.content_negotiation import json_renderer
+
+routes = djhug.Routes()
+
+
+@djhug.response.camelcased
+@djhug.response.renderer(json_renderer)
+@routes.get("api/(?P<year>[0-9]{4})/", re=True)
+def api(request, year, name: int, date: datetime):
+    loc = locals()
+    del loc["request"]
+    return {"some_data": 1, **loc}
+```
+```bash
+curl http://127.0.0.1:8000/api/2000/?name=2&date=2020-10-12T12:00
+
+Content-Type: application/json
+
+{
+    "someData": 1,
+    "date": "2020-10-12T12:00:00",
+    "name": 2,
+    "year": "2000"
+}
+```
+
+## Routes prefix
 Specify prefix in Routes object to add prefix to all urls
 ```python
 # views.py
-import django_hug
+import djhug
 
-routes = django_hug.Routes(prefix="api")
+routes = djhug.Routes(prefix="api")
 
 
 @routes.get('<int:year>/')
@@ -102,16 +129,16 @@ curl http://127.0.0.1:8000/api/2019/
 >> {"year": 2019, "month": 1}
 ```
 
-#### Types
-__Coming soon__
+## Settings
+```python
+DJHUG_RESPONSE_ADDITIONAL_HEADERS = {"Access-Control-Allow-Origin": "*"}
+DJHUG_REQUEST_PARSERS_MODULES = ("dotted.path.to.request_parsers",)
+DJHUG_RESPONSE_RENDERERS_MODULES = ("dotted.path.to.response_renderers",)
+DJHUG_CAMELCASED_RESPONSE_DATA = False
+DJHUG_UNDERSCORED_REQUEST_DATA = False
+```
 
-#### Response and request formatting
-Underscore/camelcase transform
-
-__Coming soon__
-
-
-#### To start example app
+## To start example app
 ```bash
 make venv
 source activate
@@ -119,11 +146,8 @@ cd example
 ./manage.py runserver
 ```
 
-Attention! Work In Progress
-==
-#### TODO
-* Full support various view decorators (test_decorators)
-* Support multiple routes for one view (?)
+## TODO
+* Docs and examples
+* Coverage
+* Openapi, swagger
 * Add exception handler
-* Take into account content type for response
-* Cleanup tests

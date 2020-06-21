@@ -15,9 +15,10 @@ class HTTP:
     TRACE = "TRACE"
 
     ALL = (CONNECT, DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, TRACE)
+    WITH_BODY = (POST, PUT, PATCH)
 
 
-class ContentTypes:
+class ContentType:
     HTML = "text/html"
     TEXT = "text/plain"
     JSON = "application/json"
@@ -25,8 +26,7 @@ class ContentTypes:
     FORM_URLENCODED = "application/x-www-form-urlencoded"
 
 
-class JsonStyleFormat:
-    CAMELCASE = "camelcase"
-    UNDERSCORE = "underscore"
-
-    ALL = (CAMELCASE, UNDERSCORE)
+VIEW_ATTR_NAME = "__djhug_options__"
+DIRECTIVE_ATTR_NAME = "__djhug_directive__"
+REQUEST_PARSER_ATTR_NAME = "__djhug_request_parser__"
+RESPONSE_RENDERER_ATTR_NAME = "__djhug_response_renderer__"

@@ -1,10 +1,30 @@
 import re
 from functools import partial
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
-from django_hug.constants import JsonStyleFormat
+import wrapt
 
 UNDERSCORE = (re.compile("(.)([A-Z][a-z]+)"), re.compile("([a-z0-9])([A-Z])"))
+
+
+@wrapt.decorator
+def decorator_with_arguments(decorator: Callable, instance=None, args=None, kwargs=None):
+    args = args or ()
+    kwargs = kwargs or {}
+
+    if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
+        return decorator(args[0])
+    else:
+        return lambda real_function: decorator(real_function, *args, **kwargs)
+
+
+def get_unwrapped_function(fn):
+    while True:
+        wrapped = getattr(fn, "__wrapped__", None)
+        if wrapped is None:
+            break
+        fn = wrapped
+    return fn
 
 
 def underscore_text(text: str):
@@ -17,7 +37,7 @@ def camelcase_text(text: str):
     return text[0] + "".join(text.title().split("_"))[1:]
 
 
-def _transform(content, transformator):
+def _transform(content: Union[str, dict, list], transformator):
     if isinstance(content, dict):
         new_dictionary = {}
         for key, value in content.items():
@@ -30,32 +50,9 @@ def _transform(content, transformator):
         for element in content:
             new_list.append(_transform(element, transformator))
         return new_list
-    elif isinstance(content, str):
-        return transformator(content)
     else:
         return content
 
 
 camelcase = partial(_transform, transformator=camelcase_text)
 underscore = partial(_transform, transformator=underscore_text)
-
-allowed_formatters = {JsonStyleFormat.CAMELCASE: camelcase, JsonStyleFormat.UNDERSCORE: underscore}
-
-
-def get_formatter(format: Optional[Union[str, Callable]]) -> Optional[Callable]:
-    if format is None:
-        return None
-
-    if isinstance(format, str):
-        allowed_formatter_names = list(allowed_formatters.keys())
-        if format not in allowed_formatter_names:
-            raise ValueError(f"Allowed values for format - {allowed_formatter_names}")
-
-        formatter = allowed_formatters[format]
-
-    elif callable(format):
-        formatter = format
-    else:
-        raise ValueError("Format must be callable or string")
-
-    return formatter

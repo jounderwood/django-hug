@@ -1,4 +1,4 @@
-PROJECT = django_hug
+PROJECT = djhug
 
 PYTHON_VER = python3.7
 PYTHON_SYSTEM_PATH = "$(readlink $(which $(PYTHON_VER)))"
@@ -17,22 +17,23 @@ venv_init:
 	fi
 
 venv:  venv_init
-	$(VIRTUAL_ENV)/bin/pip install -r $(REQUIREMENTS)
-	$(VIRTUAL_ENV)/bin/pip install -r $(REQUIREMENTS_DEV)
+	pip install -r $(REQUIREMENTS)
+	pip install -r $(REQUIREMENTS_DEV)
 	ln -sf $(VIRTUAL_ENV)/bin/activate activate
 
 
 tests: venv
-	$(VIRTUAL_ENV)/bin/py.test
+	py.test
 
 tests_coverage: venv
-	$(VIRTUAL_ENV)/bin/py.test --cov $(PROJECT)
+	ls $(VIRTUAL_ENV)/bin/
+	py.test --cov $(PROJECT) --cov-report html
 
 lint:
-	$(VIRTUAL_ENV)/bin/black -l 120 --check $(PROJECT)
+	black -l 120 --check $(PROJECT)
 
 coveralls:
-	$(VIRTUAL_ENV)/bin/coveralls
+	coveralls
 
 
 clean_venv:
