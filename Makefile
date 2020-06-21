@@ -23,16 +23,17 @@ venv:  venv_init
 
 
 tests: venv
-	$(VIRTUAL_ENV)/bin/py.test
+	py.test
 
 tests_coverage: venv
-	$(VIRTUAL_ENV)/bin/py.test --cov $(PROJECT) --cov-report html
+	ls $(VIRTUAL_ENV)/bin/
+	py.test --cov $(PROJECT) --cov-report html
 
 lint:
-	$(VIRTUAL_ENV)/bin/black -l 120 --check $(PROJECT)
+	black -l 120 --check $(PROJECT)
 
 coveralls:
-	$(VIRTUAL_ENV)/bin/coveralls
+	coveralls
 
 
 clean_venv:
