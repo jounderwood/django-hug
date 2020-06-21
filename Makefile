@@ -17,8 +17,8 @@ venv_init:
 	fi
 
 venv:  venv_init
-	$(VIRTUAL_ENV)/bin/pip install -r $(REQUIREMENTS)
-	$(VIRTUAL_ENV)/bin/pip install -r $(REQUIREMENTS_DEV)
+	pip install -r $(REQUIREMENTS)
+	pip install -r $(REQUIREMENTS_DEV)
 	ln -sf $(VIRTUAL_ENV)/bin/activate activate
 
 
