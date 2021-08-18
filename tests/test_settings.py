@@ -47,3 +47,4 @@ def test_camelcased_response_data_ok():
 
     with override_settings(DJHUG_CAMELCASED_RESPONSE_DATA=True):
         assert Settings().camelcased_response_data
+    del Settings()._Settings__shared_state['camelcased_response_data']
