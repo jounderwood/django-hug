@@ -23,6 +23,7 @@ def test_register_request_formatters_ok():
 
         assert "application/x-test" in get_request_parsers()
         assert get_request_parsers()["application/x-test"] == request_formatter_test
+    del Settings()._Settings__shared_state['request_parsers_modules']
 
 
 def test_register_response_formatters_ok():
@@ -33,6 +34,7 @@ def test_register_response_formatters_ok():
 
         assert "application/x-test" in get_response_renderers()
         assert get_response_renderers()["application/x-test"] == response_formatter_test
+    del Settings()._Settings__shared_state['response_renderers_modules']
 
 
 def test_response_additional_headers_ok():
@@ -40,6 +42,7 @@ def test_response_additional_headers_ok():
 
     with override_settings(DJHUG_RESPONSE_ADDITIONAL_HEADERS={"Access-Control-Allow-Origin": "*"}):
         assert Settings().response_additional_headers == {"Access-Control-Allow-Origin": "*"}
+    del Settings()._Settings__shared_state['response_additional_headers']
 
 
 def test_camelcased_response_data_ok():
@@ -47,3 +50,4 @@ def test_camelcased_response_data_ok():
 
     with override_settings(DJHUG_CAMELCASED_RESPONSE_DATA=True):
         assert Settings().camelcased_response_data
+    del Settings()._Settings__shared_state['camelcased_response_data']
